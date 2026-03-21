@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 import authRouter      from "./routes/auth.js";
 import householdsRouter from "./routes/households.js";
 import billsRouter     from "./routes/bills.js";
+import shareRouter     from "./routes/share.js";
 
 const app = new Hono();
 
@@ -24,6 +25,7 @@ app.use(
 app.route("/auth",        authRouter);
 app.route("/households",  householdsRouter);
 app.route("/bills",       billsRouter);
+app.route("/",            shareRouter);   // /share/:token + /households/:id/share
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 

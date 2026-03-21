@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ChevronLeft, Copy, Check, RotateCw, Crown, UserMinus,
   Zap, Pencil, X, Trash2, LogOut, AlertTriangle, Users, Share2,
+  Link, Shield, Plus,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api/client";
@@ -204,6 +205,51 @@ export default function SettingsPage() {
 
   // ─── Danger zone state ───────────────────────────────────────────────────
   const [showDanger, setShowDanger] = useState(false);
+
+  // ── Share links ────────────────────────────────────────────────────────────
+  interface ShareLinkRow { token: string; label: string | null; expiresAt: string | null; createdAt: string }
+  const [shareLinks,    setShareLinks]    = useState<ShareLinkRow[]>([]);
+  const [shareLoading,  setShareLoading]  = useState(true);
+  const [shareCreating, setShareCreating] = useState(false);
+  const [shareLabel,    setShareLabel]    = useState("");
+  const [copiedToken,   setCopiedToken]   = useState<string | null>(null);
+  const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
+  useEffect(() => {
+    apiFetch<ShareLinkRow[]>(`/households/${household.id}/share`)
+      .then(setShareLinks)
+      .catch(() => {})
+      .finally(() => setShareLoading(false));
+  }, [household.id]);
+
+  async function handleCreateShare() {
+    setShareCreating(true);
+    try {
+      const link = await apiFetch<ShareLinkRow>(`/households/${household.id}/share`, {
+        method: "POST",
+        body:   JSON.stringify({ label: shareLabel.trim() || undefined, expiryDays: 90 }),
+      });
+      setShareLinks((prev) => [link, ...prev]);
+      setShareLabel("");
+    } finally {
+      setShareCreating(false);
+    }
+  }
+
+  async function handleRevokeShare(token: string) {
+    await apiFetch(`/households/${household.id}/share/${token}`, { method: "DELETE" });
+    setShareLinks((prev) => prev.filter((l) => l.token !== token));
+  }
+
+  function shareUrl(token: string) {
+    return `${window.location.origin}/share/${token}`;
+  }
+
+  function copyShareLink(token: string) {
+    navigator.clipboard.writeText(shareUrl(token));
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  }
 
   async function handleDelete() {
     if (!confirm(`Delete "${household.nickname}"? This cannot be undone. All bills and data will be lost.`)) return;
@@ -457,6 +503,70 @@ export default function SettingsPage() {
               <p className="text-center text-xs text-slate-400">
                 Rotating generates a new code. The old code stops working immediately.
               </p>
+            )}
+          </div>
+        </Section>
+
+        {/* ── SHARE LINKS ── */}
+        <Section title="Share with landlord">
+          <div className="px-4 py-4 space-y-4">
+            <p className="text-xs text-slate-500">
+              Generate a read-only link. Anyone with it can view your bills and charts — no account needed. You can revoke it anytime.
+            </p>
+
+            {/* Create new link */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Label (e.g. Landlord – John)"
+                value={shareLabel}
+                onChange={(e) => setShareLabel(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreateShare()}
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+              />
+              <button
+                onClick={handleCreateShare}
+                disabled={shareCreating}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold disabled:opacity-50 transition-colors shrink-0"
+              >
+                <Plus size={14} />
+                {shareCreating ? "…" : "Create"}
+              </button>
+            </div>
+
+            {/* Existing links */}
+            {shareLoading ? (
+              <p className="text-xs text-slate-400 text-center py-2">Loading…</p>
+            ) : shareLinks.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-2">No active share links.</p>
+            ) : (
+              <div className="space-y-2">
+                {shareLinks.map((l) => (
+                  <div key={l.token} className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5">
+                    <Shield size={13} className="text-slate-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-700 truncate">{l.label ?? "Untitled link"}</p>
+                      <p className="text-[10px] text-slate-400 font-mono truncate">{`…${l.token.slice(-8)}`}
+                        {l.expiresAt && ` · expires ${new Date(l.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" })}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => copyShareLink(l.token)}
+                      className="shrink-0 p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
+                      title="Copy link"
+                    >
+                      {copiedToken === l.token ? <Check size={13} className="text-emerald-500" /> : <Link size={13} />}
+                    </button>
+                    <button
+                      onClick={() => handleRevokeShare(l.token)}
+                      className="shrink-0 p-1.5 hover:bg-red-100 rounded-lg transition-colors text-slate-400 hover:text-red-500"
+                      title="Revoke"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </Section>

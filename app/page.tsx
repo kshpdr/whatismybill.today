@@ -55,6 +55,64 @@ const fmtDate = (s: string) =>
 const fmtDateShort = (s: string) =>
   new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
+// ─── Usage equivalents ────────────────────────────────────────────────────────
+// Translates raw utility numbers into human-perceivable scale references.
+
+interface Equivalent { label: string; icon: string }
+
+function usageEquivalents(usage: number, unit: string): Equivalent[] {
+  if (usage <= 0) return [];
+  const u = unit.toLowerCase();
+
+  if (u === "kwh") {
+    const evMiles    = Math.round(usage * 3);          // ~3 mi/kWh average EV
+    const fridgeDays = Math.round(usage / 5);           // fridge ~150 kWh/mo = ~5/day
+    const iphones    = Math.round(usage / 0.015);       // ~15 Wh per full charge
+    if (usage < 20)  return [{ label: `${iphones} phone charges`, icon: "📱" }];
+    if (usage < 100) return [
+      { label: `${fridgeDays} fridge-days`, icon: "🧊" },
+      { label: `${evMiles} EV miles`, icon: "⚡" },
+    ];
+    return [
+      { label: `${evMiles.toLocaleString()} EV miles`, icon: "⚡" },
+      { label: `${fridgeDays} fridge-days`, icon: "🧊" },
+    ];
+  }
+
+  if (u === "therms") {
+    const showers    = Math.round(usage * 10);     // ~0.1 therm per 8-min shower
+    const cookHours  = Math.round(usage * 40);     // gas stove ~0.025 therm/hr
+    const heatDays   = Math.round(usage / 4);      // avg home heat ~4 therms/day
+    if (usage < 1)  return [{ label: `${cookHours} hrs cooking`, icon: "🍳" }];
+    if (usage < 10) return [
+      { label: `${showers} hot showers`, icon: "🚿" },
+      { label: `${cookHours} hrs cooking`, icon: "🍳" },
+    ];
+    return [
+      { label: `${showers} hot showers`, icon: "🚿" },
+      { label: `${heatDays} days of heating`, icon: "🔥" },
+    ];
+  }
+
+  if (u === "ccf") {
+    const gallons  = usage * 748;
+    const showers  = Math.round(gallons / 17);      // ~17 gal per 8-min shower
+    const bathtubs = Math.round(gallons / 36);      // ~36 gal per bath
+    const loads    = Math.round(gallons / 19);      // ~19 gal per laundry load
+    return [
+      { label: `${showers.toLocaleString()} showers`, icon: "🚿" },
+      { label: `${bathtubs} baths or ${loads} laundry loads`, icon: "🛁" },
+    ];
+  }
+
+  if (u === "gallons" || u === "gal") {
+    const showers = Math.round(usage / 17);
+    return [{ label: `${showers.toLocaleString()} showers`, icon: "🚿" }];
+  }
+
+  return [];
+}
+
 // ─── Small atoms ─────────────────────────────────────────────────────────────
 
 function Delta({ pct, size = "sm" }: { pct: number; size?: "xs" | "sm" }) {
@@ -235,6 +293,19 @@ function BillDetailPanel({
               </div>
             ))}
           </div>
+
+          {/* Human-scale equivalents */}
+          {bill.usage > 0 && usageEquivalents(bill.usage, bill.usageUnit).length > 0 && (
+            <div className="bg-slate-50 rounded-2xl px-4 py-3 space-y-1.5">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">That&apos;s roughly…</p>
+              {usageEquivalents(bill.usage, bill.usageUnit).map((eq) => (
+                <div key={eq.label} className="flex items-center gap-2">
+                  <span className="text-base leading-none">{eq.icon}</span>
+                  <span className="text-sm font-medium text-slate-700">{eq.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* parse error */}
           {bill.parseError && (
@@ -746,33 +817,85 @@ function DashboardPage() {
 
   // Chart data
   const ytdTotal = monthlySpend.reduce((s, m) => s + m.electricity + m.gas + m.water, 0);
-  const chargeBreakdown = elecMonthly.slice(-6).map((m) => ({
-    month: m.month.split(" ")[0],
-    ...(isDemo
-      ? { Energy: (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.energy ?? 0,
-          Delivery: (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.delivery ?? 0,
-          Programs: (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.programs ?? 0,
-          Tax: (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.taxes ?? 0 }
-      : { Total: m.total }),
-  }));
+
+  // ── Categorise a charge label into chart buckets ──────────────────────────
+  function catElec(label: string): "Energy" | "Delivery" | "Programs" | "Tax" {
+    const l = label.toLowerCase();
+    if (l.includes("generation") || l.includes("credit") || l.includes("adjustment")) return "Energy";
+    if (l.includes("delivery") || l.includes("infrastructure") || l.includes("transmission") || l.includes("distribution") || l.includes("pcia")) return "Delivery";
+    if (l.includes("program") || l.includes("public purpose") || l.includes("nuclear") || l.includes("wildfire")) return "Programs";
+    if (l.includes("tax") || l.includes("fee") || l.includes("surcharge") || l.includes("franchise")) return "Tax";
+    return "Energy";
+  }
+  function catGas(label: string): "Commodity" | "Delivery" | "Tax" {
+    const l = label.toLowerCase();
+    if (l.includes("tax") || l.includes("fee") || l.includes("franchise") || l.includes("surcharge")) return "Tax";
+    if (l.includes("delivery") || l.includes("program") || l.includes("public purpose")) return "Delivery";
+    return "Commodity";
+  }
+
+  // ── Electricity charge breakdown (real or demo) ───────────────────────────
+  const chargeBreakdown = isDemo
+    ? elecMonthly.slice(-6).map((m) => ({
+        month: m.month.split(" ")[0],
+        Energy:   (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.energy    ?? 0,
+        Delivery: (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.delivery  ?? 0,
+        Programs: (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.programs  ?? 0,
+        Tax:      (ELECTRICITY_MONTHLY.find(x => x.month === m.month) as any)?.taxes     ?? 0,
+      }))
+    : [...liveBills]
+        .filter(b => b.utilityType === "electricity")
+        .sort((a, b) => a.billingPeriodEnd.localeCompare(b.billingPeriodEnd))
+        .slice(-6)
+        .map(b => {
+          const buckets = { Energy: 0, Delivery: 0, Programs: 0, Tax: 0 };
+          for (const c of b.charges) buckets[catElec(c.label)] += c.amount;
+          const d = new Date(b.billingPeriodEnd + "T00:00:00");
+          const mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+          return { month: mo, ...buckets };
+        });
+
   const usageData = elecMonthly.map((m) => ({ month: m.month.split(" ")[0], kWh: m.kWh }));
   const rateData  = elecMonthly.map((m) => ({ month: m.month.split(" ")[0], "$/kWh": m.rate }));
-  const gasData   = gasMonthly.map((m) => ({
-    month: m.month.split(" ")[0], therms: m.therms,
-    ...(isDemo
-      ? { commodity: (GAS_MONTHLY.find(x => x.month === m.month) as any)?.commodity ?? 0,
-          delivery: (GAS_MONTHLY.find(x => x.month === m.month) as any)?.delivery ?? 0,
-          taxes: (GAS_MONTHLY.find(x => x.month === m.month) as any)?.taxes ?? 0 }
-      : { total: m.total }),
-  }));
+
+  // ── Gas data (real or demo) ───────────────────────────────────────────────
+  const gasData = isDemo
+    ? gasMonthly.map((m) => ({
+        month: m.month.split(" ")[0], therms: m.therms,
+        Commodity: (GAS_MONTHLY.find(x => x.month === m.month) as any)?.commodity ?? 0,
+        Delivery:  (GAS_MONTHLY.find(x => x.month === m.month) as any)?.delivery  ?? 0,
+        Tax:       (GAS_MONTHLY.find(x => x.month === m.month) as any)?.taxes     ?? 0,
+      }))
+    : [...liveBills]
+        .filter(b => b.utilityType === "gas")
+        .sort((a, b) => a.billingPeriodEnd.localeCompare(b.billingPeriodEnd))
+        .map(b => {
+          const buckets = { Commodity: 0, Delivery: 0, Tax: 0 };
+          for (const c of b.charges) buckets[catGas(c.label)] += c.amount;
+          const d = new Date(b.billingPeriodEnd + "T00:00:00");
+          const mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+          return { month: mo, therms: b.usage, ...buckets };
+        });
+
+  // ── Big-picture averages ──────────────────────────────────────────────────
+  const monthCount   = monthlySpend.length;
+  const avgMonthly   = monthCount > 0 ? ytdTotal / monthCount : 0;
+  const estAnnual    = avgMonthly * 12;
+  const avgElec      = monthCount > 0 ? monthlySpend.reduce((s, m) => s + m.electricity, 0) / monthCount : 0;
+  const avgGas       = monthCount > 0 ? monthlySpend.reduce((s, m) => s + m.gas, 0) / monthCount : 0;
+  const avgRate      = liveBills.filter(b => b.utilityType === "electricity" && b.unitPrice > 0)
+                         .reduce((s, b, _, a) => s + b.unitPrice / a.length, 0);
+  const CA_AVG_RATE  = 0.27; // CA average $/kWh as of 2024
+  const bestMonth    = [...monthlySpend].sort((a, b) => (a.electricity + a.gas + a.water) - (b.electricity + b.gas + b.water))[0];
+  const worstMonth   = [...monthlySpend].sort((a, b) => (b.electricity + b.gas + b.water) - (a.electricity + a.gas + a.water))[0];
 
   const filteredBills = utilityFilter === "all"
     ? allBills
     : allBills.filter((b) => b.utilityType === utilityFilter);
 
   // Current month gas/water usage label
-  const latestGasBill   = allBills.filter(b => b.utilityType === "gas").at(-1);
-  const latestWaterBill = allBills.filter(b => b.utilityType === "water").at(-1);
+  const latestGasBill   = [...allBills].filter(b => b.utilityType === "gas").sort((a,b) => b.billingPeriodEnd.localeCompare(a.billingPeriodEnd)).at(0);
+  const latestWaterBill = [...allBills].filter(b => b.utilityType === "water").sort((a,b) => b.billingPeriodEnd.localeCompare(a.billingPeriodEnd)).at(0);
   const gasUsageLabel   = latestGasBill   ? `${latestGasBill.usage} ${latestGasBill.usageUnit}`     : "—";
   const waterUsageLabel = latestWaterBill ? `${latestWaterBill.usage} ${latestWaterBill.usageUnit}` : "—";
 
@@ -1051,10 +1174,12 @@ function DashboardPage() {
               {/* ── 2. PER-UTILITY STATUS ── */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 {([
-                  { type: "electricity", icon: <Zap className="w-4 h-4 text-amber-600" />,      bg: "#FEF3C7", label: "Electricity", amount: cur.electricity, usage: `${curElec.kWh} kWh`,     provider: "PG&E",         delta: elecDelta },
-                  { type: "gas",         icon: <Flame className="w-4 h-4 text-blue-600" />,    bg: "#DBEAFE", label: "Gas",         amount: cur.gas,         usage: gasUsageLabel,           provider: "PG&E",         delta: gasDelta },
-                  { type: "water",       icon: <Droplets className="w-4 h-4 text-cyan-600" />, bg: "#CFFAFE", label: "Water",       amount: cur.water,       usage: waterUsageLabel,         provider: "East Bay MUD", delta: waterDelta },
-                ] as { type: UtilityFilter; icon: React.ReactNode; bg: string; label: string; amount: number; usage: string; provider: string; delta: number }[]).map((item, i, arr) => (
+                  { type: "electricity", icon: <Zap className="w-4 h-4 text-amber-600" />,      bg: "#FEF3C7", label: "Electricity", amount: cur.electricity, usage: `${curElec.kWh} kWh`,     rawUsage: curElec.kWh,              rawUnit: "kWh",    provider: "PG&E",         delta: elecDelta },
+                  { type: "gas",         icon: <Flame className="w-4 h-4 text-blue-600" />,    bg: "#DBEAFE", label: "Gas",         amount: cur.gas,         usage: gasUsageLabel,           rawUsage: latestGasBill?.usage ?? 0,   rawUnit: "Therms", provider: "PG&E",         delta: gasDelta },
+                  { type: "water",       icon: <Droplets className="w-4 h-4 text-cyan-600" />, bg: "#CFFAFE", label: "Water",       amount: cur.water,       usage: waterUsageLabel,         rawUsage: latestWaterBill?.usage ?? 0, rawUnit: latestWaterBill?.usageUnit ?? "CCF", provider: "East Bay MUD", delta: waterDelta },
+                ] as { type: UtilityFilter; icon: React.ReactNode; bg: string; label: string; amount: number; usage: string; rawUsage: number; rawUnit: string; provider: string; delta: number }[]).map((item, i, arr) => {
+                  const equivs = usageEquivalents(item.rawUsage, item.rawUnit);
+                  return (
                   <button
                     key={item.type}
                     className={`w-full flex items-center gap-3.5 px-4 py-4 text-left hover:bg-slate-50 active:bg-slate-100 transition-colors ${
@@ -1068,6 +1193,11 @@ function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-800">{item.label}</p>
                       <p className="text-xs text-slate-400 mt-0.5">{item.usage} · {item.provider}</p>
+                      {equivs.length > 0 && (
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {equivs[0].icon} {equivs[0].label}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-bold text-slate-900 tabular-nums">{fmt$(item.amount)}</p>
@@ -1075,7 +1205,8 @@ function DashboardPage() {
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-200 shrink-0" />
                   </button>
-                ))}
+                  );
+                })}
               </div>
 
               {/* ── 3. INSIGHT ── */}
@@ -1099,7 +1230,85 @@ function DashboardPage() {
                 </div>
               </div>
 
-              {/* ── 4. RECENT BILLS ── */}
+              {/* ── 4. AVERAGES & BENCHMARKS ── */}
+              {monthCount >= 1 && (
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="px-5 pt-4 pb-1 border-b border-slate-100">
+                  <h2 className="font-semibold text-slate-800 text-sm">Averages & Benchmarks</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Based on {monthCount} month{monthCount !== 1 ? "s" : ""} of data</p>
+                </div>
+                <div className="divide-y divide-slate-50">
+                  {/* Avg monthly + est annual */}
+                  <div className="px-5 py-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-1">Avg / month</p>
+                      <p className="text-2xl font-bold text-slate-900 tabular-nums">{fmtRound$(avgMonthly)}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">all utilities</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mb-1">Est. annual</p>
+                      <p className="text-2xl font-bold text-slate-900 tabular-nums">{fmtRound$(estAnnual)}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">at current rate</p>
+                    </div>
+                  </div>
+
+                  {/* Per-utility averages */}
+                  <div className="px-5 py-3 flex gap-3">
+                    {[
+                      { label: "Elec avg",  value: avgElec, color: C.electricity, show: avgElec > 0 },
+                      { label: "Gas avg",   value: avgGas,  color: C.gas,         show: avgGas  > 0 },
+                    ].filter(x => x.show).map(x => (
+                      <div key={x.label} className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: x.color }}>{x.label}</p>
+                        <p className="text-base font-bold text-slate-900 tabular-nums">{fmtRound$(x.value)}<span className="text-xs font-normal text-slate-400">/mo</span></p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Electricity rate vs CA average */}
+                  {avgRate > 0 && (
+                  <div className="px-5 py-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold text-slate-600">Your avg rate</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-slate-900 tabular-nums">${avgRate.toFixed(3)}/kWh</span>
+                        <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+                          avgRate <= CA_AVG_RATE ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                        }`}>
+                          {avgRate <= CA_AVG_RATE ? "↓" : "↑"} {Math.abs(((avgRate - CA_AVG_RATE) / CA_AVG_RATE) * 100).toFixed(0)}% vs CA avg
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.min((avgRate / (CA_AVG_RATE * 1.5)) * 100, 100)}%` }} />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                      <span>$0</span>
+                      <span>CA avg ${CA_AVG_RATE}/kWh</span>
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Best / worst months */}
+                  {monthCount >= 2 && bestMonth && worstMonth && (
+                  <div className="px-5 py-3 grid grid-cols-2 gap-3">
+                    <div className="bg-emerald-50 rounded-xl px-3 py-2.5">
+                      <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider mb-1">Cheapest month</p>
+                      <p className="text-sm font-bold text-slate-900">{bestMonth.month}</p>
+                      <p className="text-xs text-slate-500 tabular-nums">{fmt$((bestMonth.electricity + bestMonth.gas + bestMonth.water))}</p>
+                    </div>
+                    <div className="bg-red-50 rounded-xl px-3 py-2.5">
+                      <p className="text-[10px] font-semibold text-red-500 uppercase tracking-wider mb-1">Most expensive</p>
+                      <p className="text-sm font-bold text-slate-900">{worstMonth.month}</p>
+                      <p className="text-xs text-slate-500 tabular-nums">{fmt$((worstMonth.electricity + worstMonth.gas + worstMonth.water))}</p>
+                    </div>
+                  </div>
+                  )}
+                </div>
+              </div>
+              )}
+
+              {/* ── 5. RECENT BILLS ── */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100">
                   <h2 className="text-sm font-semibold text-slate-800">Recent Bills</h2>
@@ -1254,9 +1463,9 @@ function DashboardPage() {
                           <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={28} />
                           <Tooltip content={<ChartTooltip dollar />} cursor={{ fill: "#F8FAFC", radius: 4 }} />
                           <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 11, color: "#64748B", paddingTop: 12 }} />
-                          <Bar dataKey="commodity" name="Commodity" stackId="a" fill={C.gas}   radius={[0, 0, 0, 0]} />
-                          <Bar dataKey="delivery"  name="Delivery"  stackId="a" fill="#93C5FD" radius={[0, 0, 0, 0]} />
-                          <Bar dataKey="taxes"     name="Taxes"     stackId="a" fill={C.taxes} radius={[3, 3, 0, 0]} />
+                          <Bar dataKey="Commodity" name="Commodity" stackId="a" fill={C.gas}   radius={[0, 0, 0, 0]} />
+                          <Bar dataKey="Delivery"  name="Delivery"  stackId="a" fill="#93C5FD" radius={[0, 0, 0, 0]} />
+                          <Bar dataKey="Tax"       name="Tax"       stackId="a" fill={C.taxes} radius={[3, 3, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>

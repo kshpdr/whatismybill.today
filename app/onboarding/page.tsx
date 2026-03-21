@@ -160,7 +160,7 @@ function CodeInput({
     inputRefs.current[nextEmpty]?.focus();
   }
 
-  const chars = value.padEnd(6, "").split("");
+  const chars = value.padEnd(6, " ").split("");
 
   return (
     <div className="flex items-center justify-center gap-2">

@@ -68,4 +68,20 @@ export const billsRelations = relations(bills, ({ one }) => ({
     household: one(households, { fields: [bills.householdId], references: [households.id] }),
     uploadedBy: one(users, { fields: [bills.uploadedBy], references: [users.id] }),
 }));
+// ─── Share links ──────────────────────────────────────────────────────────────
+// A share link lets anyone with the token view a household's bills read-only.
+export const shareLinks = pgTable("share_links", {
+    token: varchar("token", { length: 64 }).primaryKey(),
+    householdId: uuid("household_id")
+        .references(() => households.id, { onDelete: "cascade" })
+        .notNull(),
+    createdBy: uuid("created_by").references(() => users.id).notNull(),
+    label: varchar("label", { length: 100 }), // e.g. "Landlord – John"
+    expiresAt: timestamp("expires_at"), // null = never
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
+    household: one(households, { fields: [shareLinks.householdId], references: [households.id] }),
+    createdBy: one(users, { fields: [shareLinks.createdBy], references: [users.id] }),
+}));
 //# sourceMappingURL=schema.js.map
