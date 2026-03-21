@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Era Series — Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root { --bg: #0C0B09; --fg: #EDEBE5; --muted: #3A3730; --muted2: #5A5750; --border: #1E1C18; --ochre: #C4882A; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* grain */
+  html::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 128px;
+  }
+
+  header {
+    padding: 32px 52px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .logo { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: var(--muted2); text-transform: uppercase; }
+
+  .header-links { display: flex; gap: 8px; }
+
+  .hl { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted2); text-decoration: none; border: 1px solid var(--border); padding: 6px 12px; transition: all 0.2s; }
+  .hl:hover { color: var(--fg); border-color: #444; }
+
+  .headline { padding: 52px 52px 12px; }
+  .hs { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.3em; color: var(--muted2); text-transform: uppercase; margin-bottom: 10px; }
+  .ht { font-family: 'Bebas Neue', sans-serif; font-size: clamp(44px, 6vw, 76px); line-height: 0.85; letter-spacing: 0.01em; }
+  .ht span { color: var(--muted2); }
+
+  .hdesc { padding: 12px 52px 32px; font-size: 13px; color: var(--muted2); max-width: 600px; line-height: 1.75; letter-spacing: 0.01em; }
+
+  /* SECTION */
+  .section-label {
+    padding: 10px 52px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    border-top: 1px solid var(--border);
+    background: rgba(255,255,255,0.01);
+  }
+
+  /* GRID */
+  .cards {
+    display: grid;
+    gap: 0;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cards.g2 { grid-template-columns: repeat(2, 1fr); }
+  .cards.g1 { grid-template-columns: 1fr; }
+
+  .card {
+    background: var(--bg);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-right: 1px solid var(--border);
+  }
+
+  .card:last-child { border-right: none; }
+  .card:hover { background: #111008; }
+
+  /* PREVIEWS */
+  .card-preview {
+    width: 100%;
+    aspect-ratio: 16/8;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── MA / HARA preview ── */
+  .prev-hara { background: #FAFAF8; }
+  .prev-hara .ph-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+    color: #1A1714;
+    line-height: 0.85;
+    text-align: center;
+  }
+  .prev-hara .ph-rule {
+    width: 50%; height: 1px; background: rgba(26,23,20,0.15);
+    margin: 16px auto 12px;
+  }
+  .prev-hara .ph-dots { display: flex; gap: 16px; justify-content: center; align-items: center; }
+  .prev-hara .ph-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* ── ABLOH preview ── */
+  .prev-abloh { background: #1A1714; }
+  .prev-abloh .pa-stripe {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: repeating-linear-gradient(-45deg, #FF6B00 0, #FF6B00 3px, transparent 3px, transparent 6px);
+    opacity: 0.5;
+  }
+  .prev-abloh .pa-content { text-align: center; }
+  .prev-abloh .pa-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.2em; color: rgba(240,237,232,0.3); text-transform: uppercase; margin-bottom: 6px; }
+  .prev-abloh .pa-label::before { content: '"c/o '; color: #FF6B00; }
+  .prev-abloh .pa-label::after { content: '"'; color: #FF6B00; }
+  .prev-abloh .pa-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    color: #F0EDE8;
+    letter-spacing: 0;
+    line-height: 0.85;
+  }
+  .prev-abloh .pa-tag { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 0.15em; color: #FF6B00; margin-top: 8px; text-transform: uppercase; }
+  .prev-abloh .pa-tag::before { content: '"'; }
+  .prev-abloh .pa-tag::after { content: '"'; }
+  .prev-abloh .pa-arrow { position: absolute; bottom: 12px; right: 20px; font-size: 32px; color: #FF6B00; opacity: 0.2; font-family: 'Bebas Neue', sans-serif; }
+
+  /* ── OXMAN preview ── */
+  .prev-oxman {
+    background: #0B0F0E;
+    overflow: hidden;
+  }
+  .prev-oxman .po-orb {
+    position: absolute; border-radius: 50%; filter: blur(40px); pointer-events: none;
+  }
+  .prev-oxman .po-content { position: relative; z-index: 1; text-align: center; }
+  .prev-oxman .po-label { font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 0.2em; color: rgba(10,223,180,0.5); text-transform: uppercase; margin-bottom: 6px; }
+  .prev-oxman .po-num { font-family: 'Syne', sans-serif; font-size: 60px; font-weight: 200; letter-spacing: -0.04em; color: #E8F0EE; line-height: 0.85; }
+  .prev-oxman .po-dots { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+  .prev-oxman .po-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* ── EPOCH preview ── */
+  .prev-epoch { background: #141210; }
+  .prev-epoch::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .prev-epoch .pe-content { position: relative; z-index: 1; text-align: center; }
+  .prev-epoch .pe-label { font-family: 'DM Mono', monospace; font-size: 7px; letter-spacing: 0.3em; color: #C4882A; text-transform: uppercase; margin-bottom: 6px; }
+  .prev-epoch .pe-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 72px;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: #EDE8E0;
+    line-height: 0.8;
+  }
+  .prev-epoch .pe-sub { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(237,232,224,0.3); letter-spacing: 0.15em; margin-top: 10px; text-transform: uppercase; }
+
+  /* CARD INFO */
+  .card-info {
+    padding: 22px 28px 26px;
+    border-top: 1px solid var(--border);
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .card-author {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    margin-top: 4px;
+  }
+
+  .card-tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    color: var(--muted2);
+    margin-top: 5px;
+  }
+
+  .card-desc {
+    font-size: 11px;
+    color: var(--muted2);
+    margin-top: 6px;
+    line-height: 1.65;
+    max-width: 240px;
+    letter-spacing: 0.01em;
+  }
+
+  .card-arrow {
+    font-size: 20px;
+    color: var(--muted2);
+    transition: transform 0.25s, color 0.25s;
+    flex-shrink: 0;
+    margin-left: 16px;
+  }
+
+  .card:hover .card-arrow { transform: translate(3px, -3px); color: var(--fg); }
+
+  /* EPOCH SPECIAL CARD */
+  .epoch-card {
+    background: var(--bg);
+    border-top: 2px solid var(--ochre);
+  }
+
+  .epoch-card .card-name { color: var(--ochre); }
+
+  footer {
+    padding: 24px 52px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted2); letter-spacing: 0.15em; text-transform: uppercase; }
+  .also-see { display: flex; align-items: center; gap: 10px; }
+  .also-see a { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted2); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 1px; transition: all 0.2s; letter-spacing: 0.1em; text-transform: uppercase; }
+  .also-see a:hover { color: var(--fg); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">whatismybill.today / Era Series</div>
+  <div class="header-links">
+    <a href="index.html" class="hl">← All</a>
+    <a href="mvp-series.html" class="hl">MVP Series</a>
+    <a href="grid-series.html" class="hl">Grid Series</a>
+  </div>
+</header>
+
+<div class="headline">
+  <div class="hs">Series 04 — Designers of Our Era + 2030 Prediction</div>
+  <div class="ht">ERA<br><span>SERIES</span></div>
+</div>
+<div class="hdesc">
+  Four perspectives: Kenya Hara's emptiness (Ma), Virgil Abloh's 3% rule, Neri Oxman's Material Ecology — all building on the FORM foundation. Plus EPOCH, my own thesis for what design looks like in 2030: texture as luxury, weight as intention, the grain as the signature of a human hand.
+</div>
+
+<div class="section-label">01 · Kenya Hara · Ma · Japan</div>
+<div class="cards g1">
+  <a class="card" href="hara.html" style="border-right:none">
+    <div class="card-preview prev-hara" style="aspect-ratio:21/6">
+      <div style="text-align:center">
+        <div class="ph-number">$571.45</div>
+        <div class="ph-rule"></div>
+        <div class="ph-dots">
+          <div class="ph-dot" style="background:#A0392B"></div>
+          <div class="ph-dot" style="background:#C97D15"></div>
+          <div class="ph-dot" style="background:#C97D15;opacity:0.6"></div>
+          <div class="ph-dot" style="background:#C97D15;opacity:0.6"></div>
+          <div class="ph-dot" style="background:#2A7A72;opacity:0.5"></div>
+          <div class="ph-dot" style="background:#2A7A72;opacity:0.5"></div>
+          <div class="ph-dot" style="background:#2A7A72;opacity:0.5"></div>
+          <div class="ph-dot" style="background:#2A7A72;opacity:0.5"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-info" style="background:#FAFAF8;border-top-color:rgba(26,23,20,0.08)">
+      <div>
+        <div class="card-name" style="color:#1A1714">MA 間</div>
+        <div class="card-author" style="color:#8C8479">Kenya Hara · Muji · Japan</div>
+        <div class="card-tag" style="border-color:rgba(26,23,20,0.12);color:#8C8479">Emptiness · Ma · Exformation</div>
+        <div class="card-desc" style="color:#8C8479">The bill dashboard as meditation. Cormorant Garamond numbers floating in cream space. Eight colored dots — the entire language of status. Everything else: silence.</div>
+      </div>
+      <div class="card-arrow" style="color:#C97D15">↗</div>
+    </div>
+  </a>
+</div>
+
+<div class="section-label">02 · Virgil Abloh + Neri Oxman · 2020s</div>
+<div class="cards g2">
+
+  <a class="card" href="abloh.html">
+    <div class="card-preview prev-abloh">
+      <div class="pa-stripe"></div>
+      <div class="pa-content">
+        <div class="pa-label">BILLS</div>
+        <div class="pa-num">$571.45</div>
+        <div class="pa-tag">MONTHLY TOTAL</div>
+      </div>
+      <div class="pa-arrow">↗</div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name">"FORM"</div>
+        <div class="card-author" style="color:#5A5750">Virgil Abloh · Off-White · 3% Rule</div>
+        <div class="card-tag">Street · Luxury · Quotation Marks</div>
+        <div class="card-desc">FORM with 3% of it different. "BILLS", "OVERDUE", "FOR MONTHLY OVERVIEW". The diagonal Off-White stripe. The arrow as graphic element. Cultural remix of financial data.</div>
+      </div>
+      <div class="card-arrow">↗</div>
+    </div>
+  </a>
+
+  <a class="card" href="oxman.html">
+    <div class="card-preview prev-oxman">
+      <div class="po-orb" style="width:200px;height:200px;background:#0ADFB4;top:-60px;left:-40px;opacity:0.15"></div>
+      <div class="po-orb" style="width:150px;height:150px;background:#F5A623;bottom:-30px;right:-20px;opacity:0.12"></div>
+      <div class="po-content">
+        <div class="po-label">Ecosystem · March 2026</div>
+        <div class="po-num">$571.45</div>
+        <div class="po-dots">
+          <div class="po-dot" style="background:#FF5E5B;box-shadow:0 0 8px rgba(255,94,91,0.5)"></div>
+          <div class="po-dot" style="background:#F5A623;box-shadow:0 0 8px rgba(245,166,35,0.4)"></div>
+          <div class="po-dot" style="background:#0ADFB4;box-shadow:0 0 8px rgba(10,223,180,0.4)"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name">Ecology</div>
+        <div class="card-author" style="color:#5A5750">Neri Oxman · MIT · Material Ecology</div>
+        <div class="card-tag">Bioluminescent · Organic · Grown</div>
+        <div class="card-desc">Bills as living organisms. Bio-luminescent palette with animated glow. Drifting radial gradient membranes. The data feels discovered, not designed. Grown, not made.</div>
+      </div>
+      <div class="card-arrow">↗</div>
+    </div>
+  </a>
+
+</div>
+
+<div class="section-label">03 · 2030 Prediction — My Synthesis</div>
+<div class="cards g1">
+  <a class="card epoch-card" href="epoch.html" style="border-right:none">
+    <div class="card-preview prev-epoch" style="aspect-ratio:21/6">
+      <div class="pe-content">
+        <div class="pe-label">Expenditure · March 2026</div>
+        <div class="pe-num">$571.45</div>
+        <div class="pe-sub">↑ +4.2% · texture as luxury · grain as intention</div>
+      </div>
+    </div>
+    <div class="card-info" style="border-top-color:var(--ochre);border-top-width:1px">
+      <div>
+        <div class="card-name" style="color:var(--ochre)">EPOCH</div>
+        <div class="card-author">2030 Prediction · Post-minimalism</div>
+        <div class="card-tag" style="border-color:var(--ochre);color:var(--ochre)">Grain · Weight · Single Accent · Typography</div>
+        <div class="card-desc">As AI generates infinite smooth perfection, the deliberate rough edge — grain, weight, materiality in digital — becomes the mark of a human hand. One ochre accent. Syne 800 at 160px. The noise filter on the background is not a bug. It is the whole point.</div>
+      </div>
+      <div class="card-arrow" style="color:var(--ochre)">↗</div>
+    </div>
+  </a>
+</div>
+
+<footer>
+  <div class="footer-text">Era Series · 4 Directions · whatismybill.today 2026</div>
+  <div class="also-see">
+    <a href="index.html">All Directions</a>
+    <a href="mvp-series.html">MVP Series</a>
+    <a href="grid-series.html">Grid Series</a>
+  </div>
+</footer>
+
+</body>
+</html>

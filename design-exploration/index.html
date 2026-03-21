@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Exploration — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:     #0F0E0C;
+    --bg2:    #161410;
+    --bg3:    #1E1B16;
+    --fg:     #EDE8E0;
+    --fg2:    rgba(237,232,224,0.6);
+    --muted:  rgba(237,232,224,0.28);
+    --border: rgba(255,255,255,0.07);
+    --ochre:  #C4882A;
+    --teal:   #0D9488;
+    --amber:  #F59E0B;
+    --coral:  #F97316;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  html::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    opacity: 0.022;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 128px;
+  }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     STICKY NAV — orientation bar
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15,14,12,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .nav-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(237,232,224,0.45);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .nav-link:hover { color: var(--fg); background: rgba(255,255,255,0.06); }
+  .nav-link.active { color: var(--ochre); }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     SECTION: FINALISTS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .section-finalists {
+    padding: 60px 40px 0;
+  }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .sl-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ochre);
+  }
+
+  .sl-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+
+  .sl-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  .sl-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Finalist panels */
+  .finalist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: var(--border);
+  }
+
+  .finalist-card {
+    text-decoration: none;
+    color: inherit;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+
+  .finalist-card:hover { background: var(--bg2); }
+
+  .finalist-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .fc-epoch::before { background: var(--ochre); }
+  .fc-form::before  { background: var(--teal); }
+
+  .fc-visual {
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* EPOCH visual */
+  .fcv-epoch {
+    background: #141210;
+  }
+  .fcv-epoch::after {
+    content: '';
+    position: absolute;
+    right: -60px; bottom: -60px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(196,136,42,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .epoch-num { position: relative; z-index: 1; text-align: center; }
+  .epoch-num-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ochre);
+    margin-bottom: 12px;
+  }
+  .epoch-num-fig {
+    font-size: 80px;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: var(--fg);
+    line-height: 0.85;
+  }
+
+  /* FORM visual — four color blocks */
+  .fcv-form {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    height: 300px;
+  }
+  .form-cell {
+    display: flex;
+    align-items: flex-end;
+    padding: 20px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .form-cell .fn { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+  .form-cell-0 { background: #1C1917; }
+  .form-cell-0 .fn { color: var(--fg); font-size: 44px; }
+  .form-cell-1 { background: #F59E0B; }
+  .form-cell-1 .fn { color: #1C1917; }
+  .form-cell-2 { background: #0D9488; }
+  .form-cell-2 .fn { color: #fff; }
+  .form-cell-3 { background: #F97316; }
+  .form-cell-3 .fn { color: #fff; }
+
+  /* Card info strip */
+  .fc-info {
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .fc-name { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+  .fc-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .fc-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 9px 18px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .fc-epoch .fc-btn { color: var(--ochre); border-color: rgba(196,136,42,0.35); background: rgba(196,136,42,0.06); }
+  .fc-epoch:hover .fc-btn { background: rgba(196,136,42,0.14); }
+  .fc-form  .fc-btn { color: var(--teal);  border-color: rgba(13,148,136,0.35); background: rgba(13,148,136,0.06); }
+  .fc-form:hover  .fc-btn  { background: rgba(13,148,136,0.14); }
+
+  /* ↓ Bridge between finalists and journey */
+  .bridge {
+    padding: 48px 40px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bridge-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--muted));
+  }
+
+  .bridge-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .bridge-arrow {
+    font-size: 14px;
+    color: var(--muted);
+    animation: bob 2s ease-in-out infinite;
+  }
+
+  @keyframes bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(4px); } }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     ROUND SECTIONS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .round-section {
+    padding: 52px 40px 0;
+  }
+
+  .round-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: 0 20px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .round-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 3px;
+  }
+
+  .round-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    line-height: 1.1;
+  }
+
+  .round-context {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 5px;
+    line-height: 1.6;
+  }
+
+  .round-gallery-link {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    transition: all 0.15s;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  .round-gallery-link:hover { color: var(--fg); border-color: rgba(255,255,255,0.15); }
+
+  /* Card grid — proper wrap, no horizontal scroll */
+  .card-grid {
+    display: grid;
+    gap: 2px;
+    background: var(--border);
+  }
+
+  .cards-4 { grid-template-columns: repeat(4, 1fr); }
+  .cards-3 { grid-template-columns: repeat(3, 1fr); }
+  .cards-5 { grid-template-columns: repeat(5, 1fr); }
+
+  .exp-card {
+    text-decoration: none;
+    color: inherit;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .exp-card:hover { background: var(--bg2); }
+
+  .exp-swatch {
+    height: 120px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .exp-label {
+    padding: 12px 14px 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .exp-name {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+  }
+
+  .exp-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* Finalist tag inside round cards */
+  .finalist-tag {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    background: rgba(196,136,42,0.15);
+    color: var(--ochre);
+    border: 1px solid rgba(196,136,42,0.3);
+    z-index: 2;
+  }
+
+  /* ─── Swatch styles ──────────────────────────────────── */
+
+  .sw-void { background: #000; }
+  .sw-void .n { font-family: 'Syne',sans-serif; font-size: 32px; font-weight: 800; color: #00F0FF; text-shadow: 0 0 18px rgba(0,240,255,0.65); letter-spacing: -0.04em; }
+
+  .sw-lumen { background: linear-gradient(135deg,#FFF8F0,#F0E4C8); }
+  .sw-lumen .n { font-family: 'Syne',sans-serif; font-size: 32px; font-weight: 300; color: #8B6914; letter-spacing: -0.04em; }
+
+  .sw-grid { background: #fff; }
+  .sw-grid .n { font-family: 'Syne',sans-serif; font-size: 36px; font-weight: 900; color: #E53E3E; letter-spacing: -0.05em; }
+
+  .sw-aurora { background: linear-gradient(135deg,#0F0524,#1A0533 50%,#0A1628); }
+  .sw-aurora .n { font-family: 'Syne',sans-serif; font-size: 32px; font-weight: 400; letter-spacing: -0.04em; background: linear-gradient(135deg,#A78BFA,#38BDF8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+  .sw-signal { background: #F5F0E8; flex-direction: column; gap: 3px; }
+  .sw-signal .cat { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:0.1em; color:#E53E3E; text-transform:uppercase; }
+  .sw-signal .n2 { font-family:'Syne',sans-serif; font-size:26px; font-weight:700; color:#1A1714; letter-spacing:-0.03em; }
+
+  .sw-konstrukt { background: #0D0D0D; }
+  .sw-konstrukt::before { content:''; position:absolute; width:80px; height:2px; background:#E53E3E; transform:rotate(-45deg) translate(12px,-6px); }
+  .sw-konstrukt .n { font-family:'Syne',sans-serif; font-size:30px; font-weight:900; color:#fff; position:relative; z-index:1; }
+
+  .sw-baus { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+  .sw-baus div { }
+
+  .sw-form-sm { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; }
+
+  .sw-apple { background: #F5F5F7; }
+  .sw-apple .n { font-family:'Syne',sans-serif; font-size:32px; font-weight:700; color:#0071E3; letter-spacing:-0.04em; }
+
+  .sw-google { background:#FFFBFE; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; padding:8px; gap:4px; }
+  .sw-google div { border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .sw-google span { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; }
+
+  .sw-openai { background: #0A0A0A; }
+  .sw-openai .n { font-family:'Syne',sans-serif; font-size:30px; font-weight:400; color:#10A37F; letter-spacing:-0.04em; }
+
+  .sw-claude { background:#FAF9F6; padding:14px 16px; align-items:flex-start; justify-content:flex-start; flex-direction:column; gap:4px; }
+  .sw-claude .clabel { font-family:'DM Mono',monospace; font-size:7px; color:#D97706; letter-spacing:0.15em; text-transform:uppercase; }
+  .sw-claude .ctitle { font-family:'Syne',sans-serif; font-size:14px; font-weight:600; color:#1A1714; letter-spacing:-0.03em; line-height:1.25; }
+
+  .sw-hara { background:#FAFAF8; flex-direction:column; gap:8px; }
+  .sw-hara .n { font-family:'Syne',sans-serif; font-size:28px; font-weight:300; color:#1A1714; opacity:0.85; letter-spacing:-0.04em; }
+  .hara-dots { display:flex; gap:5px; }
+  .hara-dots span { width:5px; height:5px; border-radius:50%; display:block; }
+
+  .sw-abloh { background:#1A1714; position:relative; }
+  .sw-abloh::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:repeating-linear-gradient(-45deg,#FF6B00 0,#FF6B00 3px,transparent 3px,transparent 6px); opacity:0.6; }
+  .sw-abloh .n { font-family:'Syne',sans-serif; font-size:28px; font-weight:900; color:#F0EDE8; }
+
+  .sw-oxman { background:#0B0F0E; position:relative; overflow:hidden; }
+  .sw-oxman::before { content:''; position:absolute; top:-40px; left:-30px; width:120px; height:120px; background:#0ADFB4; border-radius:50%; filter:blur(36px); opacity:0.12; }
+  .sw-oxman .n { font-family:'Syne',sans-serif; font-size:28px; font-weight:200; color:#E8F0EE; position:relative; z-index:1; letter-spacing:-0.04em; }
+
+  .sw-epoch { background:#141210; position:relative; }
+  .sw-epoch::before { content:''; position:absolute; inset:0; opacity:0.03; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:64px; }
+  .sw-epoch .n { font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:#EDE8E0; position:relative; z-index:1; letter-spacing:-0.05em; }
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     FOOTER
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  .footer {
+    margin-top: 60px;
+    padding: 20px 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-l, .footer-r {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ━━━━ responsive ━━━━ */
+  @media (max-width: 900px) {
+    .nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    .section-finalists, .round-section, .bridge { padding-left: 20px; padding-right: 20px; }
+    .finalist-grid { grid-template-columns: 1fr; }
+    .cards-4, .cards-5 { grid-template-columns: repeat(2, 1fr); }
+    .cards-3 { grid-template-columns: repeat(2, 1fr); }
+    .footer { padding: 16px 20px; }
+  }
+
+  /* ━━━━ animations ━━━━ */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+  .nav               { animation: fadeUp 0.3s ease; }
+  .section-finalists { animation: fadeUp 0.4s 0.05s ease both; }
+  .bridge            { animation: fadeUp 0.4s 0.1s ease both; }
+  .round-section     { animation: fadeUp 0.4s 0.12s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     STICKY NAV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<nav class="nav">
+  <div class="nav-brand">whatismybill.today &nbsp;/&nbsp; Design Exploration</div>
+  <div class="nav-links">
+    <a class="nav-link active" href="#finalists">Finalists</a>
+    <a class="nav-link" href="#round-1">Round 01</a>
+    <a class="nav-link" href="#round-2">Round 02</a>
+    <a class="nav-link" href="#round-3">Round 03</a>
+    <a class="nav-link" href="#round-4">Round 04</a>
+  </div>
+</nav>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     FINALISTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section class="section-finalists" id="finalists">
+  <div class="section-label">
+    <div class="sl-num">Selected</div>
+    <div class="sl-title">Two finalists</div>
+    <div class="sl-line"></div>
+    <div class="sl-sub">Click to open</div>
+  </div>
+
+  <div class="finalist-grid">
+
+    <!-- EPOCH -->
+    <a class="finalist-card fc-epoch" href="epoch.html">
+      <div class="fc-visual fcv-epoch">
+        <div class="epoch-num">
+          <div class="epoch-num-label">Expenditure · March 2026</div>
+          <div class="epoch-num-fig">$571.45</div>
+        </div>
+      </div>
+      <div class="fc-info">
+        <div>
+          <div class="fc-name">EPOCH</div>
+          <div class="fc-desc">Post-minimalism · Grain texture · Typography-dominant · Syne 800</div>
+        </div>
+        <div class="fc-btn">Open &nbsp;↗</div>
+      </div>
+    </a>
+
+    <!-- FORM -->
+    <a class="finalist-card fc-form" href="baus-plus.html">
+      <div class="fc-visual">
+        <div class="fcv-form" style="width:100%;height:300px;">
+          <div class="form-cell form-cell-0"><div class="fn">$571</div></div>
+          <div class="form-cell form-cell-1"><div class="fn">$234</div></div>
+          <div class="form-cell form-cell-2"><div class="fn">$336</div></div>
+          <div class="form-cell form-cell-3"><div class="fn">$89</div></div>
+        </div>
+      </div>
+      <div class="fc-info">
+        <div>
+          <div class="fc-name">FORM</div>
+          <div class="fc-desc">Bauhaus 2030 · ■●▲ status system · Three-color semantic language</div>
+        </div>
+        <div class="fc-btn">Open &nbsp;↗</div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+
+<!-- Bridge -->
+<div class="bridge">
+  <div class="bridge-line"></div>
+  <div class="bridge-text">How we got here</div>
+  <div class="bridge-arrow">↓</div>
+</div>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     ROUND 01
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section class="round-section" id="round-1">
+  <div class="round-header">
+    <div class="round-num">Round 01</div>
+    <div>
+      <div class="round-title">First shots — four completely different aesthetics</div>
+      <div class="round-context">Dark neural, warm luxury, white editorial, glassmorphic gradient. We cast wide before narrowing.</div>
+    </div>
+  </div>
+
+  <div class="card-grid cards-4">
+
+    <a class="exp-card" href="void.html">
+      <div class="exp-swatch sw-void"><div class="n">$571</div></div>
+      <div class="exp-label"><div class="exp-name">VOID</div><div class="exp-sub">Dark · Neural · Cyan glow</div></div>
+    </a>
+
+    <a class="exp-card" href="lumen.html">
+      <div class="exp-swatch sw-lumen"><div class="n">$571</div></div>
+      <div class="exp-label"><div class="exp-name">LUMEN</div><div class="exp-sub">Warm · Serif · Luxury</div></div>
+    </a>
+
+    <a class="exp-card" href="grid.html">
+      <div class="exp-swatch sw-grid"><div class="n">$571</div></div>
+      <div class="exp-label"><div class="exp-name">GRID</div><div class="exp-sub">White · Bold · Editorial</div></div>
+    </a>
+
+    <a class="exp-card" href="aurora.html">
+      <div class="exp-swatch sw-aurora"><div class="n">$571</div></div>
+      <div class="exp-label"><div class="exp-name">AURORA</div><div class="exp-sub">Purple · Glass · Gradient</div></div>
+    </a>
+
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     ROUND 02
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section class="round-section" id="round-2">
+  <div class="round-header">
+    <div class="round-num">Round 02</div>
+    <div>
+      <div class="round-title">You liked Grid — deeper into editorial territory</div>
+      <div class="round-context">Post-punk Joy Division energy, Russian constructivism, primary-color Bauhaus. Three distinct takes on the bold/graphic direction.</div>
+    </div>
+    <a class="round-gallery-link" href="grid-series.html">Full gallery →</a>
+  </div>
+
+  <div class="card-grid cards-3">
+
+    <a class="exp-card" href="signal.html">
+      <div class="exp-swatch sw-signal">
+        <div class="cat">FAC-2026</div>
+        <div class="n2">$571.45</div>
+      </div>
+      <div class="exp-label"><div class="exp-name">SIGNAL</div><div class="exp-sub">Post-Punk · Factory Records</div></div>
+    </a>
+
+    <a class="exp-card" href="konstrukt.html">
+      <div class="exp-swatch sw-konstrukt"><div class="n">$571</div></div>
+      <div class="exp-label"><div class="exp-name">KONSTRUKT</div><div class="exp-sub">Constructivism · Lebedev</div></div>
+    </a>
+
+    <a class="exp-card" href="baus.html">
+      <div class="exp-swatch sw-baus">
+        <div style="background:#E53E3E"></div>
+        <div style="background:#F6E05E"></div>
+        <div style="background:#3182CE"></div>
+        <div style="background:#1A1A1A"></div>
+      </div>
+      <div class="exp-label"><div class="exp-name">BAUS</div><div class="exp-sub">Bauhaus · Primary Colors</div></div>
+    </a>
+
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     ROUND 03
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section class="round-section" id="round-3">
+  <div class="round-header">
+    <div class="round-num">Round 03</div>
+    <div>
+      <div class="round-title">Company design languages — what would the big four ship?</div>
+      <div class="round-context">Applied the Bauhaus+ foundation to Apple, Google, OpenAI, and Claude's visual grammars. Plus FORM — our Bauhaus 2030 finalist emerged here.</div>
+    </div>
+    <a class="round-gallery-link" href="mvp-series.html">Full gallery →</a>
+  </div>
+
+  <div class="card-grid cards-5">
+
+    <a class="exp-card" href="baus-plus.html">
+      <div class="exp-swatch sw-form-sm">
+        <div style="background:#1C1917"></div>
+        <div style="background:#F59E0B"></div>
+        <div style="background:#0D9488"></div>
+        <div style="background:#F97316"></div>
+      </div>
+      <div class="finalist-tag">Finalist</div>
+      <div class="exp-label"><div class="exp-name">FORM</div><div class="exp-sub">Bauhaus 2030 · Finalist</div></div>
+    </a>
+
+    <a class="exp-card" href="apple.html">
+      <div class="exp-swatch sw-apple"><div class="n">$571</div></div>
+      <div class="exp-label"><div class="exp-name">APPLE</div><div class="exp-sub">iOS · Wallet · SF type</div></div>
+    </a>
+
+    <a class="exp-card" href="google.html">
+      <div class="exp-swatch sw-google">
+        <div style="background:#EADDFF"><span style="color:#21005D">$571</span></div>
+        <div style="background:#FFDDB3"><span style="color:#7A5900">$234</span></div>
+        <div style="background:#B7F396"><span style="color:#386A20">$336</span></div>
+        <div style="background:#F9DEDC"><span style="color:#410E0B">$89</span></div>
+      </div>
+      <div class="exp-label"><div class="exp-name">GOOGLE</div><div class="exp-sub">Material You · M3</div></div>
+    </a>
+
+    <a class="exp-card" href="openai.html">
+      <div class="exp-swatch sw-openai"><div class="n">$571.45</div></div>
+      <div class="exp-label"><div class="exp-name">OPENAI</div><div class="exp-sub">API Dashboard · Green</div></div>
+    </a>
+
+    <a class="exp-card" href="claude.html">
+      <div class="exp-swatch sw-claude">
+        <div class="clabel">March 2026</div>
+        <div class="ctitle">Here's where your money goes.</div>
+      </div>
+      <div class="exp-label"><div class="exp-name">CLAUDE</div><div class="exp-sub">Warm serif · Anthropic</div></div>
+    </a>
+
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     ROUND 04
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<section class="round-section" id="round-4">
+  <div class="round-header">
+    <div class="round-num">Round 04</div>
+    <div>
+      <div class="round-title">Designer philosophies — the masters, then a 2030 prediction</div>
+      <div class="round-context">What would Kenya Hara, Virgil Abloh, Neri Oxman build? Then EPOCH — the assistant's own synthesis of where design goes in 2030.</div>
+    </div>
+    <a class="round-gallery-link" href="era-series.html">Full gallery →</a>
+  </div>
+
+  <div class="card-grid cards-4">
+
+    <a class="exp-card" href="hara.html">
+      <div class="exp-swatch sw-hara">
+        <div class="n">$571.45</div>
+        <div class="hara-dots">
+          <span style="background:#A0392B"></span>
+          <span style="background:#C97D15"></span>
+          <span style="background:#C97D15;opacity:0.5"></span>
+          <span style="background:#2A7A72;opacity:0.5"></span>
+        </div>
+      </div>
+      <div class="exp-label"><div class="exp-name">MA 間</div><div class="exp-sub">Kenya Hara · Emptiness</div></div>
+    </a>
+
+    <a class="exp-card" href="abloh.html">
+      <div class="exp-swatch sw-abloh"><div class="n">$571.45</div></div>
+      <div class="exp-label"><div class="exp-name">"FORM"</div><div class="exp-sub">Virgil Abloh · 3% Rule</div></div>
+    </a>
+
+    <a class="exp-card" href="oxman.html">
+      <div class="exp-swatch sw-oxman"><div class="n">$571.45</div></div>
+      <div class="exp-label"><div class="exp-name">ECOLOGY</div><div class="exp-sub">Neri Oxman · Bioluminescent</div></div>
+    </a>
+
+    <a class="exp-card" href="epoch.html">
+      <div class="exp-swatch sw-epoch"><div class="n">$571.45</div></div>
+      <div class="finalist-tag">Finalist</div>
+      <div class="exp-label"><div class="exp-name">EPOCH</div><div class="exp-sub">2030 Prediction · Finalist</div></div>
+    </a>
+
+  </div>
+</section>
+
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-l">20 directions · 4 rounds · whatismybill.today</div>
+  <div class="footer-r">Specs → design/EPOCH.md &amp; design/FORM.md</div>
+</footer>
+
+
+<script>
+  // Update active nav link based on scroll position
+  const sections = ['finalists','round-1','round-2','round-3','round-4'];
+  const links = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const id = entry.target.id;
+        const link = document.querySelector(`.nav-link[href="#${id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px' });
+
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+</script>
+</body>
+</html>

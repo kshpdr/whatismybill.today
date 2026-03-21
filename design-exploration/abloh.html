@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>"BILLS" — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=Barlow:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #1A1714;     /* FORM dark base */
+    --bg2: #211E1B;
+    --bg3: #2A2622;
+    --fg: #F0EDE8;
+    --fg2: rgba(240,237,232,0.6);
+    --muted: rgba(240,237,232,0.25);
+    --muted2: rgba(240,237,232,0.1);
+    --orange: #FF6B00;  /* Off-White signature orange */
+    --orange-dim: rgba(255,107,0,0.12);
+    --orange-border: rgba(255,107,0,0.3);
+    --border: rgba(240,237,232,0.07);
+    --border2: rgba(240,237,232,0.14);
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── OFF-WHITE DIAGONAL STRIPE — signature mark ─── */
+  .ow-stripe {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--orange) 0px,
+      var(--orange) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+    z-index: 100;
+    opacity: 0.5;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    padding: 28px 44px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .brand-co {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .brand-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+
+  /* Virgil's quotation marks as graphic element */
+  .brand-name::before { content: '"'; color: var(--orange); margin-right: 2px; }
+  .brand-name::after { content: '"'; color: var(--orange); margin-left: 2px; }
+
+  .header-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .hr-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .hr-period {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--fg2);
+  }
+
+  /* ─── HERO BLOCK ─── */
+  .hero {
+    padding: 0 44px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .hero-left { padding: 36px 0 32px; }
+
+  .hero-for {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .hero-number {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(64px, 9vw, 108px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--fg);
+    line-height: 0.85;
+  }
+
+  /* The "MONTHLY TOTAL" label — in Abloh-style quotation wrapper */
+  .hero-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+
+  .hero-label::before, .hero-label::after { content: '"'; }
+
+  .hero-delta {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .hero-right {
+    padding: 36px 0 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  /* Off-White arrow mark */
+  .ow-arrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--orange);
+    opacity: 0.15;
+    letter-spacing: -0.05em;
+    line-height: 1;
+  }
+
+  .status-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+  }
+
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .sb-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--fg2);
+  }
+
+  .sb-item.overdue .sb-val { color: var(--orange); }
+
+  /* ─── NAV TABS — industrial ─── */
+  .nav-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nt-item {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 12px 20px;
+    color: var(--muted);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .nt-item:hover { color: var(--fg); background: var(--bg2); }
+  .nt-item.active { color: var(--fg); border-bottom: 2px solid var(--orange); background: var(--bg2); margin-bottom: -1px; }
+
+  /* ─── MAIN LAYOUT ─── */
+  .body {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    min-height: calc(100vh - 300px);
+  }
+
+  /* ─── BILL TABLE ─── */
+  .bill-section {
+    border-right: 1px solid var(--border);
+  }
+
+  .table-label {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tl-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fg2);
+  }
+
+  /* Abloh-style label with quotes */
+  .tl-name::before { content: '"'; color: var(--muted); }
+  .tl-name::after { content: '"'; color: var(--muted); }
+
+  .tl-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .cols-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 80px 80px 96px;
+    padding: 8px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.015);
+  }
+
+  .col-h {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .col-h:not(:first-child) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 80px 80px 96px;
+    padding: 13px 24px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.12s;
+    position: relative;
+  }
+
+  .bill-row:hover { background: var(--bg2); }
+
+  /* Abloh diagonal arrow on hover */
+  .bill-row::after {
+    content: '→';
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-45deg);
+    font-size: 12px;
+    color: var(--orange);
+    opacity: 0;
+    transition: opacity 0.15s;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+  }
+
+  .bill-row:hover::after { opacity: 1; }
+
+  .br-idx {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+  }
+
+  .br-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+
+  .br-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .br-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+
+  .br-amount {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--fg);
+    text-align: right;
+    letter-spacing: 0.02em;
+  }
+
+  .br-status { display: flex; justify-content: flex-end; }
+
+  /* Abloh-style status: the quotation mark badges */
+  .ow-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid;
+    position: relative;
+  }
+
+  /* The quotation mark decoration on badges */
+  .ow-badge::before { content: '"'; margin-right: 2px; }
+  .ow-badge::after { content: '"'; margin-left: 2px; }
+
+  .owb-paid { color: rgba(42,122,114,0.7); border-color: rgba(42,122,114,0.25); }
+  .owb-due { color: rgba(201,125,21,0.8); border-color: rgba(201,125,21,0.2); }
+  .owb-overdue { color: var(--orange); border-color: var(--orange-border); background: var(--orange-dim); }
+
+  /* ─── RIGHT PANEL ─── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-block {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pb-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* Tag with Abloh quotes */
+  .pb-tag::before { content: '"'; }
+  .pb-tag::after { content: '"'; }
+
+  .pb-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .pb-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--orange);
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  /* Bars */
+  .bars { margin-top: 16px; display: flex; align-items: flex-end; gap: 3px; height: 56px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; height: 100%; justify-content: flex-end; }
+  .bar { width: 100%; background: rgba(255,255,255,0.1); }
+  .bar.hi { background: var(--orange); opacity: 0.7; }
+  .bar-l { font-family: 'DM Mono', monospace; font-size: 6px; color: var(--muted); }
+  .bar-l.hi { color: var(--orange); }
+
+  .cat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--muted2);
+  }
+
+  .cat-row:last-child { border-bottom: none; }
+
+  .cat-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg2);
+    flex: 1;
+  }
+
+  .cat-bar { flex: 1; height: 1px; background: rgba(255,255,255,0.06); position: relative; overflow: hidden; }
+  .cat-fill { position: absolute; top: 0; left: 0; bottom: 0; background: var(--orange); opacity: 0.5; }
+  .cat-val { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--fg2); width: 44px; text-align: right; }
+
+  .log-item {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--muted2);
+    align-items: flex-start;
+  }
+
+  .log-item:last-child { border-bottom: none; }
+
+  .log-arrow { color: var(--orange); font-size: 10px; margin-top: 2px; flex-shrink: 0; font-weight: 700; }
+
+  .log-text {
+    font-size: 10px;
+    color: var(--fg2);
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+
+  .log-text strong { color: var(--fg); font-weight: 600; }
+  .log-time { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); margin-top: 1px; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 14px 44px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .footer-right {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* Abloh signature footer element */
+  .footer-sig {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .footer-sig::before { content: '"'; color: var(--orange); }
+  .footer-sig::after { content: '"'; color: var(--orange); }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .hero { animation: fadeIn 0.4s ease; }
+  .body { animation: fadeIn 0.5s 0.06s ease both; }
+</style>
+</head>
+<body>
+
+<div class="ow-stripe"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="brand">
+    <div class="brand-co">c/o whatismybill.today</div>
+    <div class="brand-name">BILLS</div>
+  </div>
+  <div class="header-right">
+    <div class="hr-tag">Current period</div>
+    <div class="hr-period">March 2026</div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-left">
+    <div class="hero-for">FOR MONTHLY OVERVIEW →</div>
+    <div class="hero-number">$571.45</div>
+    <div class="hero-label">Monthly Total</div>
+    <div class="hero-delta">+$23.17 from February · 8 active</div>
+  </div>
+  <div class="hero-right">
+    <div class="ow-arrow">↗</div>
+    <div class="status-blocks">
+      <div class="sb-item overdue">
+        <span>Overdue</span>
+        <span class="sb-val">$89.99</span>
+      </div>
+      <div class="sb-item">
+        <span>Due</span>
+        <span class="sb-val">$234.99</span>
+      </div>
+      <div class="sb-item">
+        <span>Paid</span>
+        <span class="sb-val">$336.46</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav-tabs">
+  <span class="nt-item active">Overview</span>
+  <span class="nt-item">Active</span>
+  <span class="nt-item">Archive</span>
+  <span class="nt-item">Settings</span>
+  <a href="index.html" class="nt-item" style="margin-left:auto">← Directions</a>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- BILLS TABLE -->
+  <div class="bill-section">
+    <div class="table-label">
+      <div class="tl-name">Active Bills</div>
+      <div class="tl-meta">8 items · FOR PAYING</div>
+    </div>
+    <div class="cols-row">
+      <div class="col-h">#</div>
+      <div class="col-h">Service</div>
+      <div class="col-h" style="text-align:right">Due</div>
+      <div class="col-h" style="text-align:right">Amount</div>
+      <div class="col-h" style="text-align:right">Status</div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">01</div>
+      <div><div class="br-name">AT&T Mobile</div><div class="br-sub">Telecom</div></div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$89.99</div>
+      <div class="br-status"><div class="ow-badge owb-overdue">Overdue</div></div>
+    </div>
+    <div class="bill-row">
+      <div class="br-idx">02</div>
+      <div><div class="br-name">PG&E Electricity</div><div class="br-sub">Utilities</div></div>
+      <div class="br-cell">Mar 25</div>
+      <div class="br-amount">$145.50</div>
+      <div class="br-status"><div class="ow-badge owb-due">Due</div></div>
+    </div>
+    <div class="bill-row">
+      <div class="br-idx">03</div>
+      <div><div class="br-name">Comcast Internet</div><div class="br-sub">Internet</div></div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$79.99</div>
+      <div class="br-status"><div class="ow-badge owb-due">Due</div></div>
+    </div>
+    <div class="bill-row">
+      <div class="br-idx">04</div>
+      <div><div class="br-name">Equinox Gym</div><div class="br-sub">Fitness</div></div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$185.00</div>
+      <div class="br-status"><div class="ow-badge owb-due">Due</div></div>
+    </div>
+    <div class="bill-row">
+      <div class="br-idx">05</div>
+      <div><div class="br-name">Netflix</div><div class="br-sub">Streaming</div></div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$22.99</div>
+      <div class="br-status"><div class="ow-badge owb-paid">Paid</div></div>
+    </div>
+    <div class="bill-row">
+      <div class="br-idx">06</div>
+      <div><div class="br-name">Spotify</div><div class="br-sub">Streaming</div></div>
+      <div class="br-cell">Mar 18</div>
+      <div class="br-amount">$11.99</div>
+      <div class="br-status"><div class="ow-badge owb-paid">Paid</div></div>
+    </div>
+    <div class="bill-row">
+      <div class="br-idx">07</div>
+      <div><div class="br-name">Amazon Prime</div><div class="br-sub">Commerce</div></div>
+      <div class="br-cell">Mar 22</div>
+      <div class="br-amount">$14.99</div>
+      <div class="br-status"><div class="ow-badge owb-paid">Paid</div></div>
+    </div>
+    <div class="bill-row">
+      <div class="br-idx">08</div>
+      <div><div class="br-name">GitHub Copilot</div><div class="br-sub">Dev Tools</div></div>
+      <div class="br-cell">Mar 20</div>
+      <div class="br-amount">$21.00</div>
+      <div class="br-status"><div class="ow-badge owb-paid">Paid</div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="panel-block">
+      <div class="pb-tag">Trend</div>
+      <div class="pb-num">$571.45</div>
+      <div class="pb-note">↑ +$23.17 · FOR NOTING</div>
+      <div class="bars">
+        <div class="bar-col"><div class="bar" style="height:50%"></div><div class="bar-l">A</div></div>
+        <div class="bar-col"><div class="bar" style="height:60%"></div><div class="bar-l">M</div></div>
+        <div class="bar-col"><div class="bar" style="height:53%"></div><div class="bar-l">J</div></div>
+        <div class="bar-col"><div class="bar" style="height:68%"></div><div class="bar-l">J</div></div>
+        <div class="bar-col"><div class="bar" style="height:58%"></div><div class="bar-l">A</div></div>
+        <div class="bar-col"><div class="bar" style="height:74%"></div><div class="bar-l">S</div></div>
+        <div class="bar-col"><div class="bar" style="height:63%"></div><div class="bar-l">O</div></div>
+        <div class="bar-col"><div class="bar" style="height:79%"></div><div class="bar-l">N</div></div>
+        <div class="bar-col"><div class="bar" style="height:69%"></div><div class="bar-l">D</div></div>
+        <div class="bar-col"><div class="bar" style="height:76%"></div><div class="bar-l">J</div></div>
+        <div class="bar-col"><div class="bar" style="height:84%"></div><div class="bar-l">F</div></div>
+        <div class="bar-col"><div class="bar hi" style="height:100%"></div><div class="bar-l hi">M</div></div>
+      </div>
+    </div>
+
+    <div class="panel-block">
+      <div class="pb-tag">Categories</div>
+      <div class="cat-row">
+        <div class="cat-name">Utilities</div>
+        <div class="cat-bar"><div class="cat-fill" style="width:100%"></div></div>
+        <div class="cat-val">$225.49</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-name">Fitness</div>
+        <div class="cat-bar"><div class="cat-fill" style="width:82%"></div></div>
+        <div class="cat-val">$185.00</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-name">Internet</div>
+        <div class="cat-bar"><div class="cat-fill" style="width:36%"></div></div>
+        <div class="cat-val">$79.99</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-name">Other</div>
+        <div class="cat-bar"><div class="cat-fill" style="width:25%"></div></div>
+        <div class="cat-val">$80.97</div>
+      </div>
+    </div>
+
+    <div class="panel-block">
+      <div class="pb-tag">Activity</div>
+      <div class="log-item">
+        <div class="log-arrow">→</div>
+        <div><div class="log-text"><strong>Spotify</strong> auto-paid $11.99</div><div class="log-time">14:32 today</div></div>
+      </div>
+      <div class="log-item">
+        <div class="log-arrow" style="color:var(--orange)">!</div>
+        <div><div class="log-text"><strong>AT&T</strong> payment failed</div><div class="log-time">11:15 today</div></div>
+      </div>
+      <div class="log-item">
+        <div class="log-arrow">→</div>
+        <div><div class="log-text"><strong>PG&E</strong> new bill $145.50</div><div class="log-time">09:00 today</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-left">c/o whatismybill.today · 2026</div>
+  <div class="footer-sig">FOR FINANCIAL OVERVIEW</div>
+  <div class="footer-right">3% → different</div>
+</footer>
+
+</body>
+</html>

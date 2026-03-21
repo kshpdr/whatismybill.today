@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grid Series — Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0C0C0C;
+    --fg: #F0F0F0;
+    --muted: #444;
+    --border: #1E1E1E;
+    --red: #CC1100;
+    --orange: #E84000;
+    --yellow: #F5C518;
+    --blue: #1B3F8B;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(255,255,255,0.01) 2px, rgba(255,255,255,0.01) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  header {
+    padding: 40px 56px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .back-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    transition: all 0.2s;
+  }
+
+  .back-link:hover { color: var(--fg); border-color: var(--fg); }
+
+  .headline {
+    padding: 48px 56px 16px;
+  }
+
+  .headline-super {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .headline-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 7vw, 80px);
+    line-height: 0.85;
+    letter-spacing: 0.01em;
+  }
+
+  .headline-text span { color: var(--muted); }
+
+  .headline-desc {
+    padding: 16px 56px 40px;
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+  }
+
+  /* GRID */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--bg);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .card:hover { background: #111; }
+
+  .card-preview {
+    width: 100%;
+    aspect-ratio: 4/3;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* SIGNAL preview */
+  .prev-signal {
+    background: #F3F0E8;
+  }
+
+  .prev-signal .p-grid {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px;
+    gap: 3px;
+  }
+
+  .prev-signal .wave-line {
+    height: 1px;
+    background: #D8D4CC;
+  }
+
+  .prev-signal .wave-line.bold {
+    height: 1.5px;
+    background: #111010;
+  }
+
+  .prev-signal .p-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .prev-signal .p-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 40px;
+    font-weight: 300;
+    color: #111010;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .prev-signal .p-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.2em;
+    color: #9A9590;
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  .prev-signal .p-orange {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #E84000;
+  }
+
+  /* KONSTRUKT preview */
+  .prev-konstrukt {
+    background: #F5F5F5;
+  }
+
+  .prev-konstrukt .p-slash {
+    position: absolute;
+    top: -10px; right: -10px;
+    width: 0; height: 0;
+    border-style: solid;
+    border-width: 0 140px 140px 0;
+    border-color: transparent #CC1100 transparent transparent;
+  }
+
+  .prev-konstrukt .p-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    color: #0D0D0D;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .prev-konstrukt .p-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.2em;
+    color: #666;
+    margin-top: 4px;
+    text-transform: uppercase;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .prev-konstrukt .p-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 5px;
+    background: #CC1100;
+  }
+
+  /* BAUS preview */
+  .prev-baus {
+    background: #F7F4EE;
+  }
+
+  .prev-baus .p-yellow {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: #F5C518;
+  }
+
+  .prev-baus .p-blue {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 6px;
+    background: #1B3F8B;
+  }
+
+  .prev-baus .p-red-line {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: #D62B2B;
+  }
+
+  .prev-baus .p-shapes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .prev-baus .p-circle { width: 12px; height: 12px; border-radius: 50%; background: #F5C518; }
+  .prev-baus .p-tri { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid #D62B2B; }
+  .prev-baus .p-square { width: 12px; height: 12px; background: #1B3F8B; }
+
+  .prev-baus .p-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    font-weight: 700;
+    color: #1A1A1A;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    text-align: center;
+  }
+
+  .prev-baus .p-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.15em;
+    color: #888;
+    margin-top: 6px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  /* CARD INFO */
+  .card-info {
+    padding: 24px 28px 28px;
+    border-top: 1px solid var(--border);
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+
+  .card-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .card-desc {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.6;
+    max-width: 240px;
+    letter-spacing: 0.01em;
+  }
+
+  .card-arrow {
+    font-size: 20px;
+    color: var(--muted);
+    transition: transform 0.25s, color 0.25s;
+  }
+
+  .card:hover .card-arrow { transform: translate(3px, -3px); color: var(--fg); }
+
+  .footer {
+    padding: 28px 56px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .also-see {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .also-see a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .also-see a:hover { color: var(--fg); border-color: var(--fg); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">whatismybill.today / Grid Series</div>
+  <div class="header-right">
+    <a href="index.html" class="back-link">← All Directions</a>
+  </div>
+</header>
+
+<div class="headline">
+  <div class="headline-super">Series 02 — Grid Direction Extended</div>
+  <div class="headline-text">GRID<br><span>SERIES</span></div>
+</div>
+<div class="headline-desc">
+  Three takes on the same brutalist foundation. Bold type, strong grid, data without decoration. Inspired by Factory Records, Artemy Lebedev Studio, and Bauhaus — each a distinct character study.
+</div>
+
+<div class="cards">
+
+  <!-- SIGNAL -->
+  <a class="card" href="signal.html">
+    <div class="card-preview prev-signal">
+      <div class="p-orange"></div>
+      <div class="p-grid">
+        <div class="wave-line" style="width:100%"></div>
+        <div class="wave-line" style="width:85%"></div>
+        <div class="wave-line bold" style="width:100%"></div>
+        <div class="wave-line" style="width:70%"></div>
+        <div class="wave-line" style="width:90%"></div>
+      </div>
+      <div class="p-center">
+        <div class="p-num">$571</div>
+        <div class="p-label">Monthly Total</div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name" style="color:#111010">SIGNAL</div>
+        <div class="card-tag">Post-Punk · Factory Records</div>
+        <div class="card-desc" style="color:#666">Peter Saville precision. Catalog numbers as interface. Data as signal, silence as space. Joy Division energy applied to money.</div>
+      </div>
+      <div class="card-arrow" style="color:#9A9590">↗</div>
+    </div>
+  </a>
+
+  <!-- KONSTRUKT -->
+  <a class="card" href="konstrukt.html">
+    <div class="card-preview prev-konstrukt">
+      <div class="p-slash"></div>
+      <div>
+        <div class="p-num">$571.45</div>
+        <div class="p-label">Monthly Total</div>
+      </div>
+      <div class="p-bar"></div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name" style="color:#0D0D0D">KONSTRUKT</div>
+        <div class="card-tag">Lebedev · Constructivism</div>
+        <div class="card-desc" style="color:#666">El Lissitzky meets Artemy Lebedev. Red and black. Diagonal slash, zero apology. Designed like a proclamation, not an app.</div>
+      </div>
+      <div class="card-arrow" style="color:#666">↗</div>
+    </div>
+  </a>
+
+  <!-- BAUS -->
+  <a class="card" href="baus.html">
+    <div class="card-preview prev-baus">
+      <div class="p-yellow"></div>
+      <div class="p-blue"></div>
+      <div class="p-red-line"></div>
+      <div style="text-align:center">
+        <div class="p-shapes" style="justify-content:center">
+          <div class="p-circle"></div>
+          <div class="p-tri"></div>
+          <div class="p-square"></div>
+        </div>
+        <div class="p-num">$571</div>
+        <div class="p-label">Monthly Total</div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name" style="color:#1A1A1A">BAUS</div>
+        <div class="card-tag">Bauhaus · Primary System</div>
+        <div class="card-desc" style="color:#666">Herbert Bayer's type system meets financial data. Triangle=overdue, circle=due, square=paid. Form is function.</div>
+      </div>
+      <div class="card-arrow" style="color:#888">↗</div>
+    </div>
+  </a>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-text">Grid Series · 3 Directions · whatismybill.today 2030</div>
+  <div class="also-see">
+    Also see:
+    <a href="index.html">All 7 Directions</a>
+    <a href="grid.html">Original GRID</a>
+  </div>
+</footer>
+
+</body>
+</html>

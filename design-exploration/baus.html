@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAUS — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200;300;400;700;900&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F4EE;
+    --fg: #1A1A1A;
+    --red: #D62B2B;
+    --yellow: #F5C518;
+    --blue: #1B3F8B;
+    --black: #1A1A1A;
+    --rule: #D8D4CC;
+    --rule-strong: #1A1A1A;
+    --muted: #888;
+    --paper: #EFECE4;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Unbounded', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ═══════════════════
+     HEADER
+  ═══════════════════ */
+  .header {
+    border-bottom: 3px solid var(--fg);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: stretch;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 14px;
+    border-right: 3px solid var(--fg);
+  }
+
+  /* Bauhaus primary shape trio */
+  .bh-shapes {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bh-circle {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--yellow);
+    flex-shrink: 0;
+  }
+
+  .bh-triangle {
+    width: 0; height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-bottom: 16px solid var(--red);
+    flex-shrink: 0;
+  }
+
+  .bh-square {
+    width: 16px; height: 16px;
+    background: var(--blue);
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg);
+    white-space: nowrap;
+  }
+
+  .header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 0;
+  }
+
+  .header-period {
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: stretch;
+    border-left: 3px solid var(--fg);
+  }
+
+  .header-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-left: 1px solid var(--rule);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .header-nav-item:first-child { border-left: none; }
+  .header-nav-item:hover { color: var(--fg); background: var(--paper); }
+  .header-nav-item.active { background: var(--fg); color: #fff; }
+
+  /* ═══════════════════
+     HERO STRIP
+  ═══════════════════ */
+  .hero-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 3px solid var(--fg);
+  }
+
+  .hero-cell {
+    padding: 28px 28px 24px;
+    border-right: 3px solid var(--fg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-cell:last-child { border-right: none; }
+
+  .hc-shape {
+    position: absolute;
+    top: -12px; right: -12px;
+    opacity: 0.08;
+  }
+
+  .hc-label {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hc-value {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hc-sub {
+    font-size: 8px;
+    font-weight: 400;
+    color: var(--muted);
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.04em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hc-accent-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+  }
+
+  /* ═══════════════════
+     MAIN BODY
+  ═══════════════════ */
+  .main-body {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    border-bottom: 3px solid var(--fg);
+  }
+
+  /* BILLS SECTION */
+  .bills-section {
+    border-right: 3px solid var(--fg);
+  }
+
+  .bills-title-row {
+    padding: 16px 28px;
+    border-bottom: 2px solid var(--fg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bills-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .bills-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .bills-cols {
+    display: grid;
+    grid-template-columns: 28px 1fr 80px 88px 100px 80px;
+    padding: 8px 28px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+  }
+
+  .bc {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .bc:not(:first-child) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 80px 88px 100px 80px;
+    padding: 13px 28px;
+    border-bottom: 1px solid var(--rule);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .bill-row:hover { background: var(--paper); }
+  .bill-row:last-child { border-bottom: none; }
+
+  .br-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--rule);
+    font-weight: 700;
+  }
+
+  .br-name { font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
+  .br-cat { font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: var(--muted); margin-top: 2px; letter-spacing: 0.05em; }
+
+  .br-cell {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .br-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .br-status { display: flex; justify-content: flex-end; align-items: center; }
+
+  /* Bauhaus-style status shapes */
+  .status-shape {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .ss-icon { flex-shrink: 0; }
+
+  .ss-paid {
+    color: var(--muted);
+  }
+  .ss-paid .ss-icon-sq {
+    width: 8px; height: 8px;
+    background: var(--muted);
+    opacity: 0.4;
+  }
+
+  .ss-due {
+    color: var(--blue);
+  }
+  .ss-due .ss-icon-circ {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--blue);
+  }
+
+  .ss-overdue {
+    color: var(--red);
+  }
+  .ss-overdue .ss-icon-tri {
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 9px solid var(--red);
+    animation: blink 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* VISUAL CHART */
+  .vis-chart {
+    padding: 24px;
+    border-bottom: 2px solid var(--fg);
+    flex: 0;
+  }
+
+  .vc-label {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  /* Circle chart - Bauhaus style */
+  .circle-chart {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .circle-chart svg {
+    width: 120px;
+    height: 120px;
+  }
+
+  .cc-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cc-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--fg);
+  }
+
+  .cc-leg-sq {
+    width: 8px; height: 8px;
+    flex-shrink: 0;
+  }
+
+  .cc-leg-name { flex: 1; color: var(--muted); }
+  .cc-leg-val { font-weight: 700; }
+
+  /* BARS */
+  .bar-chart-section {
+    padding: 20px 24px;
+    border-bottom: 2px solid var(--fg);
+  }
+
+  .bc-label {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .bar-cols {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 72px;
+  }
+
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end; }
+  .bar-fill { width: 100%; }
+  .bar-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 7px; color: var(--muted); }
+  .bar-lbl.c { color: var(--red); font-weight: 700; }
+
+  /* INSIGHT */
+  .insight-section {
+    padding: 20px 24px;
+  }
+
+  .is-label {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .insight-item {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .insight-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .ii-shape-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+
+  .ii-text {
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    color: var(--fg);
+  }
+
+  /* ═══════════════════
+     BOTTOM SECTION
+  ═══════════════════ */
+  .bottom-grid {
+    border-top: 3px solid var(--fg);
+    display: grid;
+    grid-template-columns: auto 1fr;
+  }
+
+  /* Bauhaus color block */
+  .color-block {
+    width: 120px;
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
+    border-right: 3px solid var(--fg);
+  }
+
+  .cb-red { background: var(--red); }
+  .cb-yellow { background: var(--yellow); }
+  .cb-blue { background: var(--blue); }
+
+  .cb-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cb-cell span {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    font-family: 'IBM Plex Mono', monospace;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  .cb-cell:nth-child(2) span { color: var(--fg); opacity: 0.4; }
+
+  /* LOG */
+  .log-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .ls-cell {
+    padding: 16px 20px;
+    border-right: 1px solid var(--rule);
+  }
+
+  .ls-cell:last-child { border-right: none; }
+
+  .lc-shape-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .lc-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .lc-text {
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    color: var(--fg);
+  }
+
+  .lc-text strong { font-weight: 700; }
+
+  /* FOOTER */
+  .footer {
+    border-top: 3px solid var(--fg);
+    padding: 14px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-shapes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .footer-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .back-link {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--fg);
+    padding: 8px 14px;
+    border: 2px solid var(--fg);
+    transition: all 0.15s;
+  }
+
+  .back-link:hover { background: var(--fg); color: var(--bg); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-strip { animation: fadeIn 0.4s ease; }
+  .main-body { animation: fadeIn 0.5s 0.05s ease both; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="bh-shapes">
+      <div class="bh-circle"></div>
+      <div class="bh-triangle"></div>
+      <div class="bh-square"></div>
+    </div>
+    <div class="header-title">whatismybill</div>
+  </div>
+  <div class="header-center">
+    <div class="header-period">Bill Dashboard · March 2026 · 8 Active Services</div>
+  </div>
+  <div class="header-right">
+    <span class="header-nav-item active">Dashboard</span>
+    <span class="header-nav-item">Bills</span>
+    <span class="header-nav-item">Analytics</span>
+    <a href="index.html" class="header-nav-item">← Return</a>
+  </div>
+</div>
+
+<!-- HERO STRIP -->
+<div class="hero-strip">
+
+  <div class="hero-cell">
+    <div class="hc-shape">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="40" fill="#1A1A1A"/>
+      </svg>
+    </div>
+    <div class="hc-label">Monthly Total</div>
+    <div class="hc-value">$571<span style="font-size:0.5em;vertical-align:super;font-weight:300">.45</span></div>
+    <div class="hc-sub">↑ +4.2% from February</div>
+    <div class="hc-accent-bar" style="background:var(--fg)"></div>
+  </div>
+
+  <div class="hero-cell" style="background:var(--yellow)">
+    <div class="hc-shape">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <polygon points="40,0 80,80 0,80" fill="#1A1A1A"/>
+      </svg>
+    </div>
+    <div class="hc-label" style="color:rgba(0,0,0,0.5)">Due This Week</div>
+    <div class="hc-value" style="color:var(--black)">$234<span style="font-size:0.5em;vertical-align:super;font-weight:300">.99</span></div>
+    <div class="hc-sub" style="color:rgba(0,0,0,0.5)">3 bills require action</div>
+    <div class="hc-accent-bar" style="background:var(--black);opacity:0.15"></div>
+  </div>
+
+  <div class="hero-cell">
+    <div class="hc-shape">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <rect width="80" height="80" fill="#1A1A1A"/>
+      </svg>
+    </div>
+    <div class="hc-label">Paid</div>
+    <div class="hc-value" style="color:var(--blue)">$336<span style="font-size:0.5em;vertical-align:super;font-weight:300">.46</span></div>
+    <div class="hc-sub">4 bills settled</div>
+    <div class="hc-accent-bar" style="background:var(--blue)"></div>
+  </div>
+
+  <div class="hero-cell" style="background:var(--red)">
+    <div class="hc-shape">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <polygon points="40,0 80,80 0,80" fill="rgba(255,255,255,0.15)"/>
+      </svg>
+    </div>
+    <div class="hc-label" style="color:rgba(255,255,255,0.6)">Overdue</div>
+    <div class="hc-value" style="color:#fff">$89<span style="font-size:0.5em;vertical-align:super;font-weight:300">.99</span></div>
+    <div class="hc-sub" style="color:rgba(255,255,255,0.6)">AT&T Mobile · act now</div>
+    <div class="hc-accent-bar" style="background:rgba(255,255,255,0.3)"></div>
+  </div>
+
+</div>
+
+<!-- MAIN BODY -->
+<div class="main-body">
+
+  <!-- BILLS -->
+  <div class="bills-section">
+    <div class="bills-title-row">
+      <div class="bills-title">Active Bills</div>
+      <div class="bills-count">8 Records · March 2026</div>
+    </div>
+    <div class="bills-cols">
+      <div class="bc">#</div>
+      <div class="bc">Service</div>
+      <div class="bc" style="text-align:right">Cat.</div>
+      <div class="bc" style="text-align:right">Due</div>
+      <div class="bc" style="text-align:right">Amount</div>
+      <div class="bc" style="text-align:right">Status</div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">01</div>
+      <div><div class="br-name">AT&T Mobile</div><div class="br-cat">Telecom</div></div>
+      <div class="br-cell">Mobile</div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$89.99</div>
+      <div class="br-status">
+        <div class="status-shape ss-overdue">
+          <div class="ss-icon"><div class="ss-icon-tri"></div></div>
+          Overdue
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">02</div>
+      <div><div class="br-name">PG&E Electricity</div><div class="br-cat">Utilities</div></div>
+      <div class="br-cell">Utility</div>
+      <div class="br-cell">Mar 25</div>
+      <div class="br-amount">$145.50</div>
+      <div class="br-status">
+        <div class="status-shape ss-due">
+          <div class="ss-icon"><div class="ss-icon-circ"></div></div>
+          Due
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">03</div>
+      <div><div class="br-name">Comcast Internet</div><div class="br-cat">Internet</div></div>
+      <div class="br-cell">Internet</div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$79.99</div>
+      <div class="br-status">
+        <div class="status-shape ss-due">
+          <div class="ss-icon"><div class="ss-icon-circ"></div></div>
+          Due
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">04</div>
+      <div><div class="br-name">Equinox Gym</div><div class="br-cat">Fitness</div></div>
+      <div class="br-cell">Fitness</div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$185.00</div>
+      <div class="br-status">
+        <div class="status-shape ss-due">
+          <div class="ss-icon"><div class="ss-icon-circ"></div></div>
+          Due
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">05</div>
+      <div><div class="br-name">Netflix</div><div class="br-cat">Streaming</div></div>
+      <div class="br-cell">Stream</div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$22.99</div>
+      <div class="br-status">
+        <div class="status-shape ss-paid">
+          <div class="ss-icon"><div class="ss-icon-sq"></div></div>
+          Paid
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">06</div>
+      <div><div class="br-name">Spotify</div><div class="br-cat">Streaming</div></div>
+      <div class="br-cell">Stream</div>
+      <div class="br-cell">Mar 18</div>
+      <div class="br-amount">$11.99</div>
+      <div class="br-status">
+        <div class="status-shape ss-paid">
+          <div class="ss-icon"><div class="ss-icon-sq"></div></div>
+          Paid
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">07</div>
+      <div><div class="br-name">Amazon Prime</div><div class="br-cat">Shopping</div></div>
+      <div class="br-cell">Misc</div>
+      <div class="br-cell">Mar 22</div>
+      <div class="br-amount">$14.99</div>
+      <div class="br-status">
+        <div class="status-shape ss-paid">
+          <div class="ss-icon"><div class="ss-icon-sq"></div></div>
+          Paid
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-num">08</div>
+      <div><div class="br-name">GitHub Copilot</div><div class="br-cat">Dev Tools</div></div>
+      <div class="br-cell">Dev</div>
+      <div class="br-cell">Mar 20</div>
+      <div class="br-amount">$21.00</div>
+      <div class="br-status">
+        <div class="status-shape ss-paid">
+          <div class="ss-icon"><div class="ss-icon-sq"></div></div>
+          Paid
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- PIE CHART -->
+    <div class="vis-chart">
+      <div class="vc-label">Category Distribution</div>
+      <div class="circle-chart">
+        <svg viewBox="0 0 120 120">
+          <!-- Bauhaus donut chart -->
+          <!-- Utilities: 39% (blue) -->
+          <circle cx="60" cy="60" r="44" fill="none" stroke="#1B3F8B" stroke-width="22"
+            stroke-dasharray="108 174" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          <!-- Fitness: 32% (red) -->
+          <circle cx="60" cy="60" r="44" fill="none" stroke="#D62B2B" stroke-width="22"
+            stroke-dasharray="89 193" stroke-dashoffset="-108" transform="rotate(-90 60 60)"/>
+          <!-- Dev: 11% (yellow) -->
+          <circle cx="60" cy="60" r="44" fill="none" stroke="#F5C518" stroke-width="22"
+            stroke-dasharray="30 252" stroke-dashoffset="-197" transform="rotate(-90 60 60)"/>
+          <!-- Other: 18% (black) -->
+          <circle cx="60" cy="60" r="44" fill="none" stroke="#888" stroke-width="22"
+            stroke-dasharray="50 232" stroke-dashoffset="-227" transform="rotate(-90 60 60)"/>
+          <!-- Inner circle (mask) -->
+          <circle cx="60" cy="60" r="30" fill="#F7F4EE"/>
+          <!-- Center text -->
+          <text x="60" y="55" text-anchor="middle" font-family="IBM Plex Mono" font-size="8" fill="#888" letter-spacing="0.1">TOTAL</text>
+          <text x="60" y="68" text-anchor="middle" font-family="Unbounded" font-size="10" font-weight="700" fill="#1A1A1A">$571</text>
+        </svg>
+      </div>
+      <div class="cc-legend">
+        <div class="cc-leg-item">
+          <div class="cc-leg-sq" style="background:var(--blue)"></div>
+          <span class="cc-leg-name">Utilities</span>
+          <span class="cc-leg-val">39%</span>
+        </div>
+        <div class="cc-leg-item">
+          <div class="cc-leg-sq" style="background:var(--red)"></div>
+          <span class="cc-leg-name">Fitness</span>
+          <span class="cc-leg-val">32%</span>
+        </div>
+        <div class="cc-leg-item">
+          <div class="cc-leg-sq" style="background:var(--yellow)"></div>
+          <span class="cc-leg-name">Dev</span>
+          <span class="cc-leg-val">11%</span>
+        </div>
+        <div class="cc-leg-item">
+          <div class="cc-leg-sq" style="background:var(--muted)"></div>
+          <span class="cc-leg-name">Other</span>
+          <span class="cc-leg-val">18%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TREND BARS -->
+    <div class="bar-chart-section">
+      <div class="bc-label">12-Month Trend</div>
+      <div class="bar-cols">
+        <div class="bar-col"><div class="bar-fill" style="height:50%;background:var(--fg);opacity:0.2"></div><div class="bar-lbl">A</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:65%;background:var(--fg);opacity:0.25"></div><div class="bar-lbl">M</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:54%;background:var(--fg);opacity:0.2"></div><div class="bar-lbl">J</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:72%;background:var(--blue);opacity:0.5"></div><div class="bar-lbl">J</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:61%;background:var(--fg);opacity:0.25"></div><div class="bar-lbl">A</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:77%;background:var(--blue);opacity:0.5"></div><div class="bar-lbl">S</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:67%;background:var(--fg);opacity:0.25"></div><div class="bar-lbl">O</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:83%;background:var(--blue);opacity:0.6"></div><div class="bar-lbl">N</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:71%;background:var(--fg);opacity:0.3"></div><div class="bar-lbl">D</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:78%;background:var(--blue);opacity:0.65"></div><div class="bar-lbl">J</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:87%;background:var(--fg);opacity:0.4"></div><div class="bar-lbl">F</div></div>
+        <div class="bar-col"><div class="bar-fill" style="height:100%;background:var(--red)"></div><div class="bar-lbl c">M</div></div>
+      </div>
+    </div>
+
+    <!-- INSIGHT -->
+    <div class="insight-section">
+      <div class="is-label">Observations</div>
+      <div class="insight-item">
+        <div class="ii-shape-row">
+          <div style="width:8px;height:8px;background:var(--red)"></div>
+        </div>
+        <div class="ii-text">Equinox is $2,220/year — your largest discretionary cost.</div>
+      </div>
+      <div class="insight-item">
+        <div class="ii-shape-row">
+          <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid var(--yellow)"></div>
+        </div>
+        <div class="ii-text">Utilities +18% over 6 months. Seasonal or permanent?</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- BOTTOM -->
+<div class="bottom-grid">
+  <div class="color-block">
+    <div class="cb-cell cb-red"><span>Due</span></div>
+    <div class="cb-cell cb-yellow"><span>Warn</span></div>
+    <div class="cb-cell cb-blue"><span>OK</span></div>
+  </div>
+
+  <div class="log-section">
+    <div class="ls-cell">
+      <div class="lc-shape-row">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--blue)"></div>
+        <div class="lc-time">Today 14:32</div>
+      </div>
+      <div class="lc-text"><strong>Spotify</strong> auto-paid $11.99 via Visa</div>
+    </div>
+    <div class="ls-cell">
+      <div class="lc-shape-row">
+        <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid var(--red)"></div>
+        <div class="lc-time">Today 11:15</div>
+      </div>
+      <div class="lc-text"><strong>AT&T failed</strong> — card declined, overdue</div>
+    </div>
+    <div class="ls-cell">
+      <div class="lc-shape-row">
+        <div style="width:6px;height:6px;background:var(--yellow)"></div>
+        <div class="lc-time">Today 09:00</div>
+      </div>
+      <div class="lc-text"><strong>PG&E</strong> bill detected — $145.50 due Mar 25</div>
+    </div>
+    <div class="ls-cell">
+      <div class="lc-shape-row">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--muted)"></div>
+        <div class="lc-time">Today 08:47</div>
+      </div>
+      <div class="lc-text">Forecast updated — <strong>+$23.17</strong> vs February</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-shapes">
+    <div class="bh-circle" style="width:10px;height:10px"></div>
+    <div class="bh-triangle" style="border-left-width:6px;border-right-width:6px;border-bottom-width:10px"></div>
+    <div class="bh-square" style="width:10px;height:10px"></div>
+  </div>
+  <div class="footer-text">whatismybill.today — baus — bauhaus series — 2030</div>
+  <a href="index.html" class="back-link">← All Directions</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Display:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* M3 Baseline Scheme */
+    --surface: #FFFBFE;
+    --surface-variant: #E7E0EC;
+    --surface-container-low: #F7F2FA;
+    --surface-container: #F3EDF7;
+    --surface-container-high: #ECE6F0;
+    --on-surface: #1C1B1F;
+    --on-surface-variant: #49454F;
+    --outline: #79747E;
+    --outline-variant: #CAC4D0;
+
+    --primary: #6750A4;
+    --primary-container: #EADDFF;
+    --on-primary: #FFFFFF;
+    --on-primary-container: #21005D;
+
+    --secondary: #625B71;
+    --secondary-container: #E8DEF8;
+    --on-secondary-container: #1D192B;
+
+    --tertiary: #7D5260;
+    --tertiary-container: #FFD8E4;
+    --on-tertiary-container: #31111D;
+
+    --error: #B3261E;
+    --error-container: #F9DEDC;
+    --on-error-container: #410E0B;
+
+    --warning: #7A5900;
+    --warning-container: #FFDDB3;
+
+    --success: #386A20;
+    --success-container: #B7F396;
+
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 28px;
+    --radius-full: 100px;
+  }
+
+  html, body {
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: 'DM Sans', 'Google Sans', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TOP APP BAR */
+  .app-bar {
+    background: var(--surface-container-low);
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px 0 16px;
+    gap: 16px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  .menu-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .menu-icon:hover { background: rgba(0,0,0,0.06); }
+
+  .menu-icon svg { width: 20px; height: 20px; fill: var(--on-surface); }
+
+  .app-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--on-surface);
+    flex: 1;
+    letter-spacing: -0.01em;
+  }
+
+  .app-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-full);
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 18px;
+  }
+
+  .icon-btn:hover { background: rgba(0,0,0,0.06); }
+
+  .fab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: box-shadow 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  .fab:hover { box-shadow: 0 4px 12px rgba(103,80,164,0.2); }
+
+  .avatar-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, #6750A4, #B5A3D4);
+    cursor: pointer;
+  }
+
+  /* NAV RAIL */
+  .body-layout {
+    display: flex;
+    min-height: calc(100vh - 64px);
+  }
+
+  .nav-rail {
+    width: 80px;
+    background: var(--surface-container-low);
+    border-right: 1px solid var(--outline-variant);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .rail-item {
+    width: 64px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0;
+    cursor: pointer;
+    border-radius: var(--radius-lg);
+    transition: background 0.2s;
+    text-decoration: none;
+  }
+
+  .rail-item:hover { background: rgba(103,80,164,0.06); }
+
+  .rail-indicator {
+    width: 56px; height: 32px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: background 0.2s;
+  }
+
+  .rail-item.active .rail-indicator {
+    background: var(--secondary-container);
+  }
+
+  .rail-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--on-surface-variant);
+    letter-spacing: 0.01em;
+  }
+
+  .rail-item.active .rail-label { color: var(--on-surface); font-weight: 600; }
+
+  /* MAIN CONTENT */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--primary);
+    text-decoration: none;
+    margin-bottom: 24px;
+  }
+
+  /* M3 Cards */
+  .filled-card {
+    background: var(--surface-container);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .elevated-card {
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
+    overflow: hidden;
+  }
+
+  .outlined-card {
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--outline-variant);
+    overflow: hidden;
+  }
+
+  /* HEADLINE */
+  .page-headline {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--on-surface);
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-chip-card {
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sc-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    margin-bottom: 8px;
+  }
+
+  .sc-number {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .sc-note {
+    font-size: 11px;
+    margin-top: 6px;
+    font-weight: 400;
+  }
+
+  .sc-total { background: var(--primary-container); }
+  .sc-total .sc-eyebrow { color: var(--on-primary-container); opacity: 0.7; }
+  .sc-total .sc-number { color: var(--on-primary-container); }
+  .sc-total .sc-note { color: var(--on-primary-container); opacity: 0.6; }
+
+  .sc-due { background: var(--warning-container); }
+  .sc-due .sc-eyebrow { color: var(--warning); opacity: 0.8; }
+  .sc-due .sc-number { color: var(--warning); }
+  .sc-due .sc-note { color: var(--warning); opacity: 0.7; }
+
+  .sc-paid { background: var(--success-container); }
+  .sc-paid .sc-eyebrow { color: var(--success); opacity: 0.8; }
+  .sc-paid .sc-number { color: var(--success); }
+  .sc-paid .sc-note { color: var(--success); opacity: 0.7; }
+
+  .sc-overdue { background: var(--error-container); }
+  .sc-overdue .sc-eyebrow { color: var(--error); opacity: 0.8; }
+  .sc-overdue .sc-number { color: var(--error); }
+  .sc-overdue .sc-note { color: var(--error); opacity: 0.7; }
+
+  /* CONTENT GRID */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 316px;
+    gap: 16px;
+  }
+
+  /* BILL LIST CARD */
+  .bill-list-card {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--outline-variant);
+  }
+
+  .list-head {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--outline-variant);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .list-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
+  }
+
+  .text-btn {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    cursor: pointer;
+    letter-spacing: 0.01em;
+  }
+
+  .bill-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--outline-variant);
+    gap: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .bill-item:last-child { border-bottom: none; }
+  .bill-item:hover { background: var(--surface-container-low); }
+
+  .bill-avatar {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .bill-text { flex: 1; }
+  .bill-name { font-size: 14px; font-weight: 500; color: var(--on-surface); letter-spacing: -0.01em; }
+  .bill-cat { font-size: 12px; color: var(--on-surface-variant); margin-top: 1px; }
+
+  .bill-info { text-align: right; }
+  .bill-amount { font-size: 15px; font-weight: 600; color: var(--on-surface); letter-spacing: -0.02em; }
+  .bill-date { font-size: 12px; color: var(--on-surface-variant); margin-top: 2px; }
+
+  /* M3 Assist Chips for status */
+  .assist-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.01em;
+  }
+
+  .chip-paid { background: var(--success-container); color: var(--success); border-color: var(--success-container); }
+  .chip-due { background: var(--warning-container); color: var(--warning); border-color: var(--warning-container); }
+  .chip-overdue { background: var(--error-container); color: var(--error); border-color: var(--error-container); }
+
+  /* RIGHT COL */
+  .right-col { display: flex; flex-direction: column; gap: 14px; }
+
+  .right-card-head {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  .right-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
+  }
+
+  .right-card-body { padding: 16px 18px; }
+
+  .trend-number {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--on-surface);
+    line-height: 1;
+  }
+
+  .trend-delta {
+    font-size: 12px;
+    color: var(--error);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .sparkline-wrap { margin-top: 16px; }
+  .sparkline-svg { width: 100%; height: 56px; }
+
+  .month-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .month-lbl {
+    font-size: 10px;
+    color: var(--on-surface-variant);
+  }
+
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  .cat-item:last-child { border-bottom: none; }
+
+  .cat-dot {
+    width: 10px; height: 10px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+  }
+
+  .cat-name { font-size: 13px; color: var(--on-surface); flex: 1; font-weight: 400; }
+  .cat-track { flex: 1; height: 4px; background: var(--surface-container-high); border-radius: var(--radius-full); overflow: hidden; }
+  .cat-fill { height: 100%; border-radius: var(--radius-full); }
+  .cat-val { font-size: 13px; font-weight: 600; color: var(--on-surface); width: 52px; text-align: right; }
+
+  .log-entry {
+    display: flex;
+    gap: 10px;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--outline-variant);
+    align-items: flex-start;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+
+  .le-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .le-text { font-size: 12px; color: var(--on-surface-variant); line-height: 1.5; }
+  .le-text strong { font-weight: 600; color: var(--on-surface); }
+  .le-time { font-size: 11px; color: var(--outline); margin-top: 2px; }
+
+  @keyframes m3In { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .stats-row { animation: m3In 0.35s ease; }
+  .content-grid { animation: m3In 0.4s 0.05s ease both; }
+</style>
+</head>
+<body>
+
+<!-- APP BAR -->
+<div class="app-bar">
+  <div class="menu-icon">
+    <svg viewBox="0 0 24 24"><rect y="4" width="18" height="2" rx="1"/><rect y="11" width="18" height="2" rx="1"/><rect y="18" width="18" height="2" rx="1"/></svg>
+  </div>
+  <div class="app-title">My Bills</div>
+  <div class="app-bar-right">
+    <a href="index.html" style="text-decoration:none"><button class="icon-btn" title="Back">←</button></a>
+    <button class="fab">+ Add bill</button>
+    <div class="avatar-btn"></div>
+  </div>
+</div>
+
+<div class="body-layout">
+  <!-- NAV RAIL -->
+  <nav class="nav-rail">
+    <div class="rail-item active">
+      <div class="rail-indicator">🏠</div>
+      <div class="rail-label">Home</div>
+    </div>
+    <div class="rail-item">
+      <div class="rail-indicator">📋</div>
+      <div class="rail-label">Bills</div>
+    </div>
+    <div class="rail-item">
+      <div class="rail-indicator">📊</div>
+      <div class="rail-label">Stats</div>
+    </div>
+    <div class="rail-item">
+      <div class="rail-indicator">⚙️</div>
+      <div class="rail-label">Settings</div>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <a href="index.html" class="back-link">← All directions</a>
+
+    <div class="page-headline">March overview</div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-chip-card sc-total">
+        <div class="sc-eyebrow">Monthly total</div>
+        <div class="sc-number">$571.45</div>
+        <div class="sc-note">↑ +4.2% from Feb</div>
+      </div>
+      <div class="stat-chip-card sc-due">
+        <div class="sc-eyebrow">Due this week</div>
+        <div class="sc-number">$234.99</div>
+        <div class="sc-note">3 bills</div>
+      </div>
+      <div class="stat-chip-card sc-paid">
+        <div class="sc-eyebrow">Paid</div>
+        <div class="sc-number">$336.46</div>
+        <div class="sc-note">4 settled</div>
+      </div>
+      <div class="stat-chip-card sc-overdue">
+        <div class="sc-eyebrow">Overdue</div>
+        <div class="sc-number">$89.99</div>
+        <div class="sc-note">Action needed</div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content-grid">
+      <div class="bill-list-card">
+        <div class="list-head">
+          <div class="list-title">All bills</div>
+          <div class="text-btn">Manage</div>
+        </div>
+
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:var(--error-container);color:var(--error)">AT</div>
+          <div class="bill-text"><div class="bill-name">AT&T Mobile</div><div class="bill-cat">Telecom</div></div>
+          <div class="bill-info"><div class="bill-amount">$89.99</div><div class="bill-date">Mar 15</div></div>
+          <div class="assist-chip chip-overdue">Overdue</div>
+        </div>
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:#E8DEF8;color:var(--primary)">PG</div>
+          <div class="bill-text"><div class="bill-name">PG&E Electricity</div><div class="bill-cat">Utilities</div></div>
+          <div class="bill-info"><div class="bill-amount">$145.50</div><div class="bill-date">Mar 25</div></div>
+          <div class="assist-chip chip-due">Due soon</div>
+        </div>
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:#E8DEF8;color:var(--primary)">CX</div>
+          <div class="bill-text"><div class="bill-name">Comcast Internet</div><div class="bill-cat">Internet</div></div>
+          <div class="bill-info"><div class="bill-amount">$79.99</div><div class="bill-date">Apr 1</div></div>
+          <div class="assist-chip chip-due">Due soon</div>
+        </div>
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:var(--warning-container);color:var(--warning)">EQ</div>
+          <div class="bill-text"><div class="bill-name">Equinox Gym</div><div class="bill-cat">Fitness</div></div>
+          <div class="bill-info"><div class="bill-amount">$185.00</div><div class="bill-date">Apr 1</div></div>
+          <div class="assist-chip chip-due">Due soon</div>
+        </div>
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:var(--success-container);color:var(--success)">NF</div>
+          <div class="bill-text"><div class="bill-name">Netflix</div><div class="bill-cat">Streaming</div></div>
+          <div class="bill-info"><div class="bill-amount">$22.99</div><div class="bill-date">Mar 15</div></div>
+          <div class="assist-chip chip-paid">Paid</div>
+        </div>
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:var(--success-container);color:var(--success)">SP</div>
+          <div class="bill-text"><div class="bill-name">Spotify</div><div class="bill-cat">Streaming</div></div>
+          <div class="bill-info"><div class="bill-amount">$11.99</div><div class="bill-date">Mar 18</div></div>
+          <div class="assist-chip chip-paid">Paid</div>
+        </div>
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:var(--success-container);color:var(--success)">AM</div>
+          <div class="bill-text"><div class="bill-name">Amazon Prime</div><div class="bill-cat">Shopping</div></div>
+          <div class="bill-info"><div class="bill-amount">$14.99</div><div class="bill-date">Mar 22</div></div>
+          <div class="assist-chip chip-paid">Paid</div>
+        </div>
+        <div class="bill-item">
+          <div class="bill-avatar" style="background:var(--success-container);color:var(--success)">GH</div>
+          <div class="bill-text"><div class="bill-name">GitHub Copilot</div><div class="bill-cat">Dev</div></div>
+          <div class="bill-info"><div class="bill-amount">$21.00</div><div class="bill-date">Mar 20</div></div>
+          <div class="assist-chip chip-paid">Paid</div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="outlined-card">
+          <div class="right-card-head"><div class="right-card-title">Spending trend</div></div>
+          <div class="right-card-body">
+            <div class="trend-number">$571.45</div>
+            <div class="trend-delta">↑ +$23.17 from February</div>
+            <div class="sparkline-wrap">
+              <svg class="sparkline-svg" viewBox="0 0 260 56" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="gGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#6750A4" stop-opacity="0.2"/>
+                    <stop offset="100%" stop-color="#6750A4" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,48 L22,42 L43,38 L65,44 L87,35 L108,40 L130,30 L152,36 L173,26 L195,32 L217,22 L260,12"
+                  fill="none" stroke="#6750A4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M0,48 L22,42 L43,38 L65,44 L87,35 L108,40 L130,30 L152,36 L173,26 L195,32 L217,22 L260,12 L260,56 L0,56 Z"
+                  fill="url(#gGrad)"/>
+              </svg>
+              <div class="month-row">
+                <span class="month-lbl">Apr</span>
+                <span class="month-lbl">Aug</span>
+                <span class="month-lbl">Dec</span>
+                <span class="month-lbl" style="color:var(--primary);font-weight:600">Mar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="outlined-card">
+          <div class="right-card-head"><div class="right-card-title">Categories</div></div>
+          <div class="cat-item">
+            <div class="cat-dot" style="background:var(--primary)"></div>
+            <div class="cat-name">Utilities</div>
+            <div class="cat-track"><div class="cat-fill" style="width:100%;background:var(--primary)"></div></div>
+            <div class="cat-val">$225.49</div>
+          </div>
+          <div class="cat-item">
+            <div class="cat-dot" style="background:var(--tertiary)"></div>
+            <div class="cat-name">Fitness</div>
+            <div class="cat-track"><div class="cat-fill" style="width:82%;background:var(--tertiary)"></div></div>
+            <div class="cat-val">$185.00</div>
+          </div>
+          <div class="cat-item">
+            <div class="cat-dot" style="background:var(--secondary)"></div>
+            <div class="cat-name">Internet</div>
+            <div class="cat-track"><div class="cat-fill" style="width:36%;background:var(--secondary)"></div></div>
+            <div class="cat-val">$79.99</div>
+          </div>
+          <div class="cat-item">
+            <div class="cat-dot" style="background:#386A20"></div>
+            <div class="cat-name">Other</div>
+            <div class="cat-track"><div class="cat-fill" style="width:25%;background:#386A20"></div></div>
+            <div class="cat-val">$80.97</div>
+          </div>
+        </div>
+
+        <div class="outlined-card">
+          <div class="right-card-head"><div class="right-card-title">Recent activity</div></div>
+          <div class="log-entry">
+            <div class="le-icon" style="background:var(--success-container)">✓</div>
+            <div><div class="le-text"><strong>Spotify</strong> auto-paid $11.99</div><div class="le-time">Today, 2:32 PM</div></div>
+          </div>
+          <div class="log-entry">
+            <div class="le-icon" style="background:var(--error-container)">✕</div>
+            <div><div class="le-text"><strong>AT&T</strong> payment failed — card declined</div><div class="le-time">Today, 11:15 AM</div></div>
+          </div>
+          <div class="log-entry">
+            <div class="le-icon" style="background:var(--warning-container)">!</div>
+            <div><div class="le-text"><strong>PG&E</strong> bill detected $145.50</div><div class="le-time">Today, 9:00 AM</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

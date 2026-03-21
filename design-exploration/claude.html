@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAF9F6;
+    --bg2: #F5F3EE;
+    --bg3: #EDE9E1;
+    --fg: #1A1714;
+    --fg2: #3D3831;
+    --muted: #8C8479;
+    --muted2: #B5AFA7;
+    --border: rgba(0,0,0,0.07);
+    --border2: rgba(0,0,0,0.12);
+    --coral: #D97706; /* Anthropic warm amber/coral */
+    --coral2: #B45309;
+    --coral-light: #FEF3C7;
+    --coral-border: rgba(217,119,6,0.2);
+    --green: #15803D;
+    --green-light: #DCFCE7;
+    --red: #B91C1C;
+    --red-light: #FEE2E2;
+    --amber: #92400E;
+    --amber-light: #FEF3C7;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TOP HEADER */
+  .header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Claude's characteristic logo shape */
+  .claude-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 40px;
+  }
+
+  .claude-mark {
+    width: 30px; height: 30px;
+    position: relative;
+  }
+
+  .claude-mark svg {
+    width: 30px; height: 30px;
+  }
+
+  .claude-name {
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .hn-item {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .hn-item:hover { background: var(--bg2); color: var(--fg2); }
+  .hn-item.active { background: var(--bg2); color: var(--fg); font-weight: 500; }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-ghost {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    letter-spacing: -0.01em;
+  }
+
+  .btn-ghost:hover { background: var(--bg2); color: var(--fg); }
+
+  .btn-warm {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bg);
+    background: var(--fg);
+    border: none;
+    padding: 8px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    letter-spacing: -0.01em;
+  }
+
+  .btn-warm:hover { opacity: 0.88; }
+
+  /* CONTENT */
+  .main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 40px 32px 80px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 36px;
+    transition: color 0.15s;
+    letter-spacing: -0.01em;
+  }
+
+  .back-link:hover { color: var(--coral); }
+
+  /* PAGE HEADING - Lora serif */
+  .page-heading {
+    margin-bottom: 32px;
+  }
+
+  .ph-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--coral);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .ph-title {
+    font-family: 'Lora', serif;
+    font-size: 34px;
+    font-weight: 500;
+    color: var(--fg);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .ph-title em { font-style: italic; }
+
+  .ph-sub {
+    font-size: 15px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+
+  /* STATS — card row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    transition: box-shadow 0.2s;
+    cursor: default;
+  }
+
+  .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+
+  .sc-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .sc-value {
+    font-family: 'Lora', serif;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    line-height: 1;
+  }
+
+  .sc-value.coral { color: var(--coral); }
+  .sc-value.green { color: var(--green); }
+  .sc-value.red { color: var(--red); }
+
+  .sc-note {
+    font-size: 11px;
+    color: var(--muted2);
+    margin-top: 6px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ALERT */
+  .alert-strip {
+    background: var(--amber-light);
+    border: 1px solid var(--coral-border);
+    border-radius: var(--radius-sm);
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .alert-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--coral);
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .alert-content { flex: 1; }
+  .alert-title { font-size: 14px; font-weight: 600; color: var(--fg); letter-spacing: -0.02em; margin-bottom: 2px; }
+  .alert-desc { font-size: 13px; color: var(--fg2); line-height: 1.5; letter-spacing: -0.01em; }
+
+  .alert-action {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--coral2);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 6px 14px;
+    background: var(--bg);
+    border: 1px solid var(--coral-border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .alert-action:hover { background: var(--bg3); }
+
+  /* MAIN GRID */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 308px;
+    gap: 20px;
+  }
+
+  /* BILLS */
+  .bills-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .bills-header {
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .bills-title {
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--fg);
+    letter-spacing: -0.02em;
+  }
+
+  .bills-action {
+    font-size: 13px;
+    color: var(--coral);
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+
+  .bill-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+    gap: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .bill-row:last-child { border-bottom: none; }
+  .bill-row:hover { background: var(--bg3); }
+
+  .bill-initial {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--fg2);
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .bill-info { flex: 1; }
+  .bill-name { font-size: 14px; font-weight: 500; color: var(--fg); letter-spacing: -0.02em; }
+  .bill-cat { font-size: 12px; color: var(--muted); margin-top: 1px; letter-spacing: -0.01em; }
+
+  .bill-right { text-align: right; }
+  .bill-amount { font-family: 'Lora', serif; font-size: 15px; font-weight: 500; color: var(--fg); letter-spacing: -0.02em; }
+  .bill-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Warm status badges */
+  .status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .sb-paid { background: var(--green-light); color: var(--green); }
+  .sb-due { background: var(--amber-light); color: var(--amber); }
+  .sb-overdue { background: var(--red-light); color: var(--red); }
+
+  /* RIGHT */
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .side-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .sp-head {
+    padding: 16px 18px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sp-title {
+    font-family: 'Lora', serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--fg);
+    letter-spacing: -0.02em;
+  }
+
+  .sp-body { padding: 18px; }
+
+  .trend-num {
+    font-family: 'Lora', serif;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    color: var(--fg);
+    line-height: 1;
+  }
+
+  .trend-note {
+    font-size: 12px;
+    color: var(--coral);
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .spark-wrap { margin-top: 16px; }
+  .sparkline-svg { width: 100%; height: 56px; }
+
+  .month-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+  }
+
+  .month-lbl {
+    font-size: 10px;
+    color: var(--muted2);
+    letter-spacing: -0.01em;
+  }
+
+  .cat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cat-item:last-child { border-bottom: none; }
+
+  .cat-pip {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .cat-name { font-size: 13px; color: var(--fg2); flex: 1; letter-spacing: -0.01em; }
+  .cat-bar-bg { flex: 1.2; height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .cat-bar-fill { height: 100%; border-radius: 2px; }
+  .cat-val { font-size: 13px; font-weight: 500; color: var(--fg); width: 52px; text-align: right; font-family: 'Lora', serif; letter-spacing: -0.02em; }
+
+  .log-entry {
+    display: flex;
+    gap: 10px;
+    padding: 11px 18px;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+
+  .le-pip {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .le-text { font-size: 12px; color: var(--fg2); line-height: 1.5; letter-spacing: -0.01em; }
+  .le-text strong { font-weight: 600; color: var(--fg); }
+  .le-time { font-size: 11px; color: var(--muted2); margin-top: 2px; }
+
+  @keyframes warmFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stats-row { animation: warmFade 0.45s ease; }
+  .content-grid { animation: warmFade 0.5s 0.07s ease both; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="claude-logo">
+    <!-- Anthropic's characteristic mark shape -->
+    <div class="claude-mark">
+      <svg viewBox="0 0 30 30" fill="none">
+        <path d="M15 3C8.37 3 3 8.37 3 15s5.37 12 12 12 12-5.37 12-12S21.63 3 15 3zm0 2c5.52 0 10 4.48 10 10S20.52 25 15 25 5 20.52 5 15 9.48 5 15 5zm-2.5 4v12l10-6-10-6z" fill="#D97706"/>
+      </svg>
+    </div>
+    <div class="claude-name">whatismybill</div>
+  </div>
+  <nav class="header-nav">
+    <span class="hn-item active">Overview</span>
+    <span class="hn-item">Bills</span>
+    <span class="hn-item">Insights</span>
+    <span class="hn-item">History</span>
+  </nav>
+  <div class="header-right">
+    <a href="index.html" class="btn-ghost">← Directions</a>
+    <button class="btn-warm">+ Add bill</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+  <a href="index.html" class="back-link">← All design directions</a>
+
+  <div class="page-heading">
+    <div class="ph-label">March 2026</div>
+    <div class="ph-title">Here's where<br>your money goes.</div>
+    <div class="ph-sub">8 active subscriptions · 1 needs your attention</div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="sc-label">Monthly total</div>
+      <div class="sc-value coral">$571.45</div>
+      <div class="sc-note">↑ +4.2% from February</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Due this week</div>
+      <div class="sc-value">$234.99</div>
+      <div class="sc-note">3 bills upcoming</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Paid</div>
+      <div class="sc-value green">$336.46</div>
+      <div class="sc-note">4 settled ✓</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-label">Overdue</div>
+      <div class="sc-value red">$89.99</div>
+      <div class="sc-note">Needs attention</div>
+    </div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert-strip">
+    <div class="alert-dot"></div>
+    <div class="alert-content">
+      <div class="alert-title">AT&T Mobile is 5 days overdue</div>
+      <div class="alert-desc">Your $89.99 payment from March 15 failed because your card was declined. Update your payment method to avoid a service interruption.</div>
+    </div>
+    <button class="alert-action">Fix this →</button>
+  </div>
+
+  <!-- GRID -->
+  <div class="content-grid">
+
+    <div class="bills-panel">
+      <div class="bills-header">
+        <div class="bills-title">Your bills</div>
+        <div class="bills-action">Add new</div>
+      </div>
+
+      <div class="bill-row">
+        <div class="bill-initial">AT&T</div>
+        <div class="bill-info"><div class="bill-name">AT&T Mobile</div><div class="bill-cat">Telecom · Auto-pay off</div></div>
+        <div class="bill-right"><div class="bill-amount">$89.99</div><div class="bill-date">Was Mar 15</div></div>
+        <div class="status-badge sb-overdue">Overdue</div>
+      </div>
+      <div class="bill-row">
+        <div class="bill-initial">PG&E</div>
+        <div class="bill-info"><div class="bill-name">PG&E Electricity</div><div class="bill-cat">Utilities · Variable</div></div>
+        <div class="bill-right"><div class="bill-amount">$145.50</div><div class="bill-date">Due Mar 25</div></div>
+        <div class="status-badge sb-due">Due soon</div>
+      </div>
+      <div class="bill-row">
+        <div class="bill-initial">CX</div>
+        <div class="bill-info"><div class="bill-name">Comcast Internet</div><div class="bill-cat">Internet · Fixed</div></div>
+        <div class="bill-right"><div class="bill-amount">$79.99</div><div class="bill-date">Due Apr 1</div></div>
+        <div class="status-badge sb-due">Due soon</div>
+      </div>
+      <div class="bill-row">
+        <div class="bill-initial">EQ</div>
+        <div class="bill-info"><div class="bill-name">Equinox Gym</div><div class="bill-cat">Fitness · Monthly</div></div>
+        <div class="bill-right"><div class="bill-amount">$185.00</div><div class="bill-date">Due Apr 1</div></div>
+        <div class="status-badge sb-due">Due soon</div>
+      </div>
+      <div class="bill-row">
+        <div class="bill-initial">NF</div>
+        <div class="bill-info"><div class="bill-name">Netflix</div><div class="bill-cat">Streaming · Auto-pay</div></div>
+        <div class="bill-right"><div class="bill-amount">$22.99</div><div class="bill-date">Paid Mar 15</div></div>
+        <div class="status-badge sb-paid">Paid</div>
+      </div>
+      <div class="bill-row">
+        <div class="bill-initial">SP</div>
+        <div class="bill-info"><div class="bill-name">Spotify</div><div class="bill-cat">Streaming · Auto-pay</div></div>
+        <div class="bill-right"><div class="bill-amount">$11.99</div><div class="bill-date">Paid Mar 18</div></div>
+        <div class="status-badge sb-paid">Paid</div>
+      </div>
+      <div class="bill-row">
+        <div class="bill-initial">AM</div>
+        <div class="bill-info"><div class="bill-name">Amazon Prime</div><div class="bill-cat">Shopping · Annual</div></div>
+        <div class="bill-right"><div class="bill-amount">$14.99</div><div class="bill-date">Paid Mar 22</div></div>
+        <div class="status-badge sb-paid">Paid</div>
+      </div>
+      <div class="bill-row">
+        <div class="bill-initial">GH</div>
+        <div class="bill-info"><div class="bill-name">GitHub Copilot</div><div class="bill-cat">Dev · Monthly</div></div>
+        <div class="bill-right"><div class="bill-amount">$21.00</div><div class="bill-date">Paid Mar 20</div></div>
+        <div class="status-badge sb-paid">Paid</div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="side-panel">
+        <div class="sp-head"><div class="sp-title">Spending trend</div></div>
+        <div class="sp-body">
+          <div class="trend-num">$571.45</div>
+          <div class="trend-note">↑ +$23.17 from last month</div>
+          <div class="spark-wrap">
+            <svg class="sparkline-svg" viewBox="0 0 260 56" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="cGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#D97706" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#D97706" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,48 L22,42 L43,38 L65,44 L87,35 L108,40 L130,30 L152,36 L173,26 L195,32 L217,22 L260,12"
+                fill="none" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M0,48 L22,42 L43,38 L65,44 L87,35 L108,40 L130,30 L152,36 L173,26 L195,32 L217,22 L260,12 L260,56 L0,56 Z"
+                fill="url(#cGrad)"/>
+            </svg>
+            <div class="month-row">
+              <span class="month-lbl">Apr</span>
+              <span class="month-lbl">Aug</span>
+              <span class="month-lbl">Dec</span>
+              <span class="month-lbl" style="color:#D97706;font-weight:500">Mar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="sp-head"><div class="sp-title">Where it goes</div></div>
+        <div class="cat-item">
+          <div class="cat-pip" style="background:#D97706"></div>
+          <div class="cat-name">Utilities</div>
+          <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:100%;background:#D97706;opacity:0.5"></div></div>
+          <div class="cat-val">$225.49</div>
+        </div>
+        <div class="cat-item">
+          <div class="cat-pip" style="background:#92400E"></div>
+          <div class="cat-name">Fitness</div>
+          <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:82%;background:#92400E;opacity:0.5"></div></div>
+          <div class="cat-val">$185.00</div>
+        </div>
+        <div class="cat-item">
+          <div class="cat-pip" style="background:#15803D"></div>
+          <div class="cat-name">Streaming</div>
+          <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:22%;background:#15803D;opacity:0.5"></div></div>
+          <div class="cat-val">$34.98</div>
+        </div>
+        <div class="cat-item">
+          <div class="cat-pip" style="background:#1D4ED8"></div>
+          <div class="cat-name">Dev & Other</div>
+          <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:25%;background:#1D4ED8;opacity:0.4"></div></div>
+          <div class="cat-val">$124.98</div>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="sp-head"><div class="sp-title">What happened today</div></div>
+        <div class="log-entry">
+          <div class="le-pip" style="background:#15803D"></div>
+          <div><div class="le-text"><strong>Spotify</strong> charged $11.99 automatically</div><div class="le-time">2:32 PM</div></div>
+        </div>
+        <div class="log-entry">
+          <div class="le-pip" style="background:var(--red)"></div>
+          <div><div class="le-text"><strong>AT&T</strong> payment failed — card declined</div><div class="le-time">11:15 AM</div></div>
+        </div>
+        <div class="log-entry">
+          <div class="le-pip" style="background:#D97706"></div>
+          <div><div class="le-text">A new <strong>PG&E</strong> bill arrived, $145.50 due Mar 25</div><div class="le-time">9:00 AM</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

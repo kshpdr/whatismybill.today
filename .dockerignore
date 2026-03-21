@@ -1,0 +1,12 @@
+node_modules
+.next
+.env
+.env.local
+*.env
+backend
+functions
+bills
+design-exploration
+.git
+.gitignore
+README.md

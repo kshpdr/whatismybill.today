@@ -1,0 +1,12 @@
+# Replace whatismybill.today with your actual domain.
+# Caddy auto-provisions and renews the TLS certificate — nothing else needed.
+
+whatismybill.today {
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy localhost:3001
+    }
+    handle {
+        reverse_proxy localhost:3000
+    }
+}

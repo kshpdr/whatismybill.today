@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenAI — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Söhne:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0A0A0A;
+    --bg2: #111111;
+    --bg3: #1A1A1A;
+    --bg4: #222222;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --fg: #ECECEC;
+    --fg2: rgba(236,236,236,0.7);
+    --muted: rgba(236,236,236,0.35);
+    --muted2: rgba(236,236,236,0.18);
+    --green: #10A37F;
+    --green-dim: rgba(16,163,127,0.12);
+    --green-border: rgba(16,163,127,0.25);
+    --amber: #F5C542;
+    --red: #EF4444;
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* SIDEBAR + MAIN layout */
+  .app {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+  }
+
+  .sidebar-logo {
+    padding: 0 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* OpenAI logo mark */
+  .oai-mark {
+    width: 28px; height: 28px;
+    background: var(--fg);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .oai-mark svg {
+    width: 16px; height: 16px;
+    fill: var(--bg);
+  }
+
+  .sidebar-brand {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+
+  .sidebar-nav { padding: 16px 0; flex: 1; }
+
+  .sidebar-section {
+    padding: 0 12px;
+    margin-bottom: 8px;
+  }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 4px 6px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--fg2);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .sidebar-item:hover { background: var(--bg3); color: var(--fg); }
+  .sidebar-item.active { background: var(--bg4); color: var(--fg); }
+
+  .si-icon { font-size: 13px; opacity: 0.6; }
+
+  .si-badge {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 100px;
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid var(--green-border);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .sidebar-footer {
+    padding: 16px 12px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .user-row:hover { background: var(--bg3); }
+
+  .user-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green), #0D7A61);
+    flex-shrink: 0;
+  }
+
+  .user-name { font-size: 13px; color: var(--fg2); }
+
+  /* MAIN */
+  .main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--bg);
+  }
+
+  .topbar-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .oai-btn {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--fg2);
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.15s;
+    letter-spacing: -0.01em;
+  }
+
+  .oai-btn:hover { background: var(--bg3); color: var(--fg); }
+
+  .oai-btn-primary {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+
+  .oai-btn-primary:hover { background: rgba(236,236,236,0.9); }
+
+  /* CONTENT */
+  .content {
+    flex: 1;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1200px;
+    width: 100%;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: color 0.15s;
+    align-self: flex-start;
+  }
+
+  .back-link:hover { color: var(--green); }
+
+  /* STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .stat-cell {
+    background: var(--bg2);
+    padding: 20px;
+    position: relative;
+  }
+
+  .stat-cell::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    transform: scaleX(0);
+    transition: transform 0.3s;
+  }
+
+  .stat-cell:hover::after { transform: scaleX(1); }
+  .stat-cell:nth-child(1)::after { background: var(--green); }
+  .stat-cell:nth-child(2)::after { background: var(--amber); }
+  .stat-cell:nth-child(3)::after { background: var(--green); }
+  .stat-cell:nth-child(4)::after { background: var(--red); }
+
+  .sc-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .sc-value {
+    font-size: 26px;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+    line-height: 1;
+  }
+
+  .sc-value.green { color: var(--green); }
+  .sc-value.amber { color: var(--amber); }
+  .sc-value.red { color: var(--red); }
+
+  .sc-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  /* MAIN LAYOUT */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+  }
+
+  /* BILLS TABLE */
+  .bills-table {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .table-head-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 80px 80px 96px 80px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .th {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .th:not(:first-child) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 80px 80px 96px 80px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .bill-row:last-child { border-bottom: none; }
+  .bill-row:hover { background: var(--bg3); }
+
+  .br-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted2);
+  }
+
+  .br-name { font-size: 13px; font-weight: 400; color: var(--fg); letter-spacing: -0.01em; }
+  .br-cat { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  .br-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .br-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--fg);
+    text-align: right;
+    font-weight: 500;
+  }
+
+  .br-status { display: flex; justify-content: flex-end; }
+
+  .status-token {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .st-paid { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border); }
+  .st-due { background: rgba(245,197,66,0.1); color: var(--amber); border: 1px solid rgba(245,197,66,0.2); }
+  .st-overdue { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+
+  /* RIGHT PANEL */
+  .right-panel { display: flex; flex-direction: column; gap: 14px; }
+
+  .panel-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .panel-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg2);
+    letter-spacing: 0.01em;
+  }
+
+  .panel-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .panel-body { padding: 16px; }
+
+  .trend-val {
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    color: var(--fg);
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+
+  .trend-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--amber);
+    margin-bottom: 16px;
+  }
+
+  .sparkline-svg { width: 100%; height: 56px; }
+
+  .month-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .month-lbl {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: var(--muted2);
+  }
+
+  .cat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cat-row:last-child { border-bottom: none; }
+
+  .cat-bar-bg { flex: 1; height: 2px; background: var(--border); position: relative; overflow: hidden; }
+  .cat-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; }
+  .cat-name { font-size: 11px; color: var(--fg2); width: 60px; flex-shrink: 0; letter-spacing: -0.01em; }
+  .cat-val { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--fg); width: 44px; text-align: right; }
+
+  .log-row {
+    display: flex;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .log-row:last-child { border-bottom: none; }
+
+  .log-indicator {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .log-text { font-size: 11px; color: var(--fg2); line-height: 1.5; }
+  .log-text strong { color: var(--fg); font-weight: 500; }
+  .log-time { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .app { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="oai-mark">
+        <svg viewBox="0 0 24 24"><path d="M22.28 9.6a5.8 5.8 0 0 0-.5-4.79 5.9 5.9 0 0 0-6.33-2.83A5.87 5.87 0 0 0 11 0a5.9 5.9 0 0 0-5.63 4.1 5.88 5.88 0 0 0-3.93 2.86 5.9 5.9 0 0 0 .73 6.91 5.8 5.8 0 0 0 .5 4.79 5.9 5.9 0 0 0 6.33 2.83A5.88 5.88 0 0 0 13 24a5.9 5.9 0 0 0 5.63-4.1 5.88 5.88 0 0 0 3.93-2.86 5.9 5.9 0 0 0-.28-7.44z"/></svg>
+      </div>
+      <div class="sidebar-brand">My Bills</div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Overview</div>
+        <div class="sidebar-item active">
+          <span class="si-icon">⊟</span>
+          Dashboard
+          <span class="si-badge">1</span>
+        </div>
+        <div class="sidebar-item">
+          <span class="si-icon">≡</span>
+          All Bills
+        </div>
+        <div class="sidebar-item">
+          <span class="si-icon">∿</span>
+          Analytics
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-label">Manage</div>
+        <div class="sidebar-item">
+          <span class="si-icon">⊕</span>
+          Add Bill
+        </div>
+        <div class="sidebar-item">
+          <span class="si-icon">⊛</span>
+          Integrations
+        </div>
+        <a href="index.html" class="sidebar-item">
+          <span class="si-icon">←</span>
+          All Directions
+        </a>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="user-avatar"></div>
+        <div class="user-name">Alex Chen</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Dashboard · March 2026</div>
+      <div class="topbar-right">
+        <button class="oai-btn">Export</button>
+        <button class="oai-btn oai-btn-primary">+ Add Bill</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <a href="index.html" class="back-link">← Design directions</a>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-cell">
+          <div class="sc-label">Total / Month</div>
+          <div class="sc-value green">$571.45</div>
+          <div class="sc-sub">↑ +4.2% vs Feb</div>
+        </div>
+        <div class="stat-cell">
+          <div class="sc-label">Due / Week</div>
+          <div class="sc-value amber">$234.99</div>
+          <div class="sc-sub">3 bills pending</div>
+        </div>
+        <div class="stat-cell">
+          <div class="sc-label">Paid / Month</div>
+          <div class="sc-value">$336.46</div>
+          <div class="sc-sub">4 settled</div>
+        </div>
+        <div class="stat-cell">
+          <div class="sc-label">Overdue</div>
+          <div class="sc-value red">$89.99</div>
+          <div class="sc-sub">Action required</div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID -->
+      <div class="main-grid">
+        <div class="bills-table">
+          <div class="table-head-row">
+            <div class="th">#</div>
+            <div class="th">Service</div>
+            <div class="th" style="text-align:right">Cat.</div>
+            <div class="th" style="text-align:right">Due</div>
+            <div class="th" style="text-align:right">Amount</div>
+            <div class="th" style="text-align:right">Status</div>
+          </div>
+
+          <div class="bill-row">
+            <div class="br-num">01</div>
+            <div><div class="br-name">AT&T Mobile</div><div class="br-cat">Telecom</div></div>
+            <div class="br-cell">Mobile</div>
+            <div class="br-cell">Mar 15</div>
+            <div class="br-amount">$89.99</div>
+            <div class="br-status"><div class="status-token st-overdue">Overdue</div></div>
+          </div>
+          <div class="bill-row">
+            <div class="br-num">02</div>
+            <div><div class="br-name">PG&E Electricity</div><div class="br-cat">Utilities</div></div>
+            <div class="br-cell">Utility</div>
+            <div class="br-cell">Mar 25</div>
+            <div class="br-amount">$145.50</div>
+            <div class="br-status"><div class="status-token st-due">Due</div></div>
+          </div>
+          <div class="bill-row">
+            <div class="br-num">03</div>
+            <div><div class="br-name">Comcast Internet</div><div class="br-cat">Internet</div></div>
+            <div class="br-cell">Internet</div>
+            <div class="br-cell">Apr 01</div>
+            <div class="br-amount">$79.99</div>
+            <div class="br-status"><div class="status-token st-due">Due</div></div>
+          </div>
+          <div class="bill-row">
+            <div class="br-num">04</div>
+            <div><div class="br-name">Equinox Gym</div><div class="br-cat">Fitness</div></div>
+            <div class="br-cell">Fitness</div>
+            <div class="br-cell">Apr 01</div>
+            <div class="br-amount">$185.00</div>
+            <div class="br-status"><div class="status-token st-due">Due</div></div>
+          </div>
+          <div class="bill-row">
+            <div class="br-num">05</div>
+            <div><div class="br-name">Netflix</div><div class="br-cat">Streaming</div></div>
+            <div class="br-cell">Stream</div>
+            <div class="br-cell">Mar 15</div>
+            <div class="br-amount">$22.99</div>
+            <div class="br-status"><div class="status-token st-paid">Paid</div></div>
+          </div>
+          <div class="bill-row">
+            <div class="br-num">06</div>
+            <div><div class="br-name">Spotify</div><div class="br-cat">Streaming</div></div>
+            <div class="br-cell">Stream</div>
+            <div class="br-cell">Mar 18</div>
+            <div class="br-amount">$11.99</div>
+            <div class="br-status"><div class="status-token st-paid">Paid</div></div>
+          </div>
+          <div class="bill-row">
+            <div class="br-num">07</div>
+            <div><div class="br-name">Amazon Prime</div><div class="br-cat">Shopping</div></div>
+            <div class="br-cell">Misc</div>
+            <div class="br-cell">Mar 22</div>
+            <div class="br-amount">$14.99</div>
+            <div class="br-status"><div class="status-token st-paid">Paid</div></div>
+          </div>
+          <div class="bill-row">
+            <div class="br-num">08</div>
+            <div><div class="br-name">GitHub Copilot</div><div class="br-cat">Dev</div></div>
+            <div class="br-cell">Dev</div>
+            <div class="br-cell">Mar 20</div>
+            <div class="br-amount">$21.00</div>
+            <div class="br-status"><div class="status-token st-paid">Paid</div></div>
+          </div>
+        </div>
+
+        <div class="right-panel">
+          <div class="panel-card">
+            <div class="panel-head">
+              <div class="panel-title">Spending</div>
+              <div class="panel-meta">12 months</div>
+            </div>
+            <div class="panel-body">
+              <div class="trend-val">$571.45</div>
+              <div class="trend-sub">↑ +$23.17 vs February</div>
+              <svg class="sparkline-svg" viewBox="0 0 260 56" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="oGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10A37F" stop-opacity="0.2"/>
+                    <stop offset="100%" stop-color="#10A37F" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,48 L22,42 L43,38 L65,44 L87,35 L108,40 L130,30 L152,36 L173,26 L195,32 L217,22 L260,12"
+                  fill="none" stroke="#10A37F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M0,48 L22,42 L43,38 L65,44 L87,35 L108,40 L130,30 L152,36 L173,26 L195,32 L217,22 L260,12 L260,56 L0,56 Z"
+                  fill="url(#oGrad)"/>
+                <circle cx="260" cy="12" r="2.5" fill="#10A37F"/>
+              </svg>
+              <div class="month-row">
+                <span class="month-lbl">APR</span>
+                <span class="month-lbl">AUG</span>
+                <span class="month-lbl">DEC</span>
+                <span class="month-lbl" style="color:#10A37F">MAR</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-head"><div class="panel-title">Categories</div></div>
+            <div class="cat-row">
+              <div class="cat-name">Utilities</div>
+              <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:100%;background:#10A37F;opacity:0.7"></div></div>
+              <div class="cat-val">$225.49</div>
+            </div>
+            <div class="cat-row">
+              <div class="cat-name">Fitness</div>
+              <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:82%;background:rgba(255,255,255,0.25)"></div></div>
+              <div class="cat-val">$185.00</div>
+            </div>
+            <div class="cat-row">
+              <div class="cat-name">Internet</div>
+              <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:36%;background:rgba(255,255,255,0.2)"></div></div>
+              <div class="cat-val">$79.99</div>
+            </div>
+            <div class="cat-row">
+              <div class="cat-name">Other</div>
+              <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:25%;background:rgba(255,255,255,0.15)"></div></div>
+              <div class="cat-val">$80.97</div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-head">
+              <div class="panel-title">Activity</div>
+              <div class="panel-meta">Today</div>
+            </div>
+            <div class="log-row">
+              <div class="log-indicator" style="background:#10A37F"></div>
+              <div><div class="log-text"><strong>Spotify</strong> auto-paid $11.99</div><div class="log-time">14:32</div></div>
+            </div>
+            <div class="log-row">
+              <div class="log-indicator" style="background:var(--red)"></div>
+              <div><div class="log-text"><strong>AT&T</strong> payment failed — card declined</div><div class="log-time">11:15</div></div>
+            </div>
+            <div class="log-row">
+              <div class="log-indicator" style="background:var(--amber)"></div>
+              <div><div class="log-text"><strong>PG&E</strong> bill detected $145.50</div><div class="log-time">09:00</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

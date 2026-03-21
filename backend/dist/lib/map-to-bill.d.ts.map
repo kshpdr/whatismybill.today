@@ -1,0 +1,1 @@
+{"version":3,"file":"map-to-bill.d.ts","sourceRoot":"","sources":["../../src/lib/map-to-bill.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,OAAO,EAAE,MAAM,oBAAoB,CAAC;AAClD,OAAO,KAAK,EAAE,OAAO,EAAE,MAAM,iBAAiB,CAAC;AAE/C;;;;GAIG;AACH,wBAAgB,gBAAgB,CAC9B,IAAI,EAAE,OAAO,EACb,UAAU,EAAE,MAAM,EAClB,WAAW,EAAE,MAAM,EACnB,UAAU,EAAE,MAAM,EAClB,WAAW,UAAQ,GAClB,OAAO,EAAE,CAoBX"}

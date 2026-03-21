@@ -30,8 +30,24 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — ignore real secrets, keep examples
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/data/
+
+# Claude / Cursor workspace files
+.claude/
+
+# Firebase leftovers (Firebase was abandoned in favour of custom backend)
+.firebaserc
+firebase.json
+firestore.indexes.json
+firestore.rules
+functions/
+lib/firebase/
+bills/
 
 # vercel
 .vercel
@@ -39,3 +55,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+test-bills/
