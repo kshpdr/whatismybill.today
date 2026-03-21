@@ -208,9 +208,9 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-slate-200" />
           </div>
 
-          {/* demo shortcut */}
+          {/* demo shortcut — /demo redirects to /?demo=1 */}
           <Link
-            href="/"
+            href="/demo"
             className="w-full flex items-center justify-center gap-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 py-2.5 rounded-xl font-medium text-sm transition-colors"
           >
             View demo dashboard

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Epoch — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Syne+Mono&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #141210;
+    --bg2: #1A1814;
+    --bg3: #211F1A;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.1);
+    --fg: #EDE8E0;
+    --fg2: rgba(237,232,224,0.6);
+    --muted: rgba(237,232,224,0.3);
+    --muted2: rgba(237,232,224,0.12);
+    /* One single accent color — used with surgical precision */
+    --ochre: #C4882A;
+    --ochre-dim: rgba(196,136,42,0.1);
+    --ochre-border: rgba(196,136,42,0.22);
+    --ochre-glow: rgba(196,136,42,0.15);
+  }
+
+  /* ─── GRAIN TEXTURE — the defining element of 2030 design ─── */
+  html {
+    background: var(--bg);
+  }
+
+  html::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px;
+  }
+
+  body {
+    color: var(--fg);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── MASTHEAD — typographic, nothing more ─── */
+  .masthead {
+    padding: 28px 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .m-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+
+  .m-nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .mn-item {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .mn-item:hover { color: var(--fg2); }
+  .mn-item.active { color: var(--fg); }
+
+  .m-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+  }
+
+  /* ─── THE WEIGHT OF MONEY — hero ─── */
+  .hero {
+    padding: 56px 48px 48px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle texture within the hero */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 70% 50%, var(--ochre-dim) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ochre);
+    margin-bottom: 16px;
+  }
+
+  .hero-figure {
+    font-size: clamp(80px, 14vw, 160px);
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: var(--fg);
+    line-height: 0.8;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* The grain shows through the number */
+  .hero-figure::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .hero-bottom {
+    margin-top: 24px;
+    display: flex;
+    align-items: flex-end;
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hb-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .hb-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .hbs-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .hbs-val {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--ochre);
+    line-height: 1;
+  }
+
+  .hbs-val.dim { color: var(--fg2); }
+  .hbs-val.teal { color: #4ABFA8; }
+
+  /* ─── MAIN TABLE ─── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 264px;
+  }
+
+  .table-col {
+    border-right: 1px solid var(--border);
+  }
+
+  .tc-head {
+    padding: 12px 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tch-label {
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .tch-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  .th-row {
+    display: grid;
+    grid-template-columns: 1fr 72px 88px 72px;
+    padding: 9px 48px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.012);
+  }
+
+  .th-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .th-cell:not(:first-child) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 1fr 72px 88px 72px;
+    padding: 14px 48px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .bill-row:hover { background: rgba(255,255,255,0.02); }
+  .bill-row.hi { background: var(--ochre-dim); border-left: 2px solid var(--ochre); padding-left: 46px; }
+
+  .br-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--fg);
+    letter-spacing: 0.01em;
+  }
+
+  .br-cat {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .bc {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+
+  .bc.amount {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .bc.status { text-align: right; }
+
+  /* Status as typographic mark — no color except ochre for overdue */
+  .status-mark {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .status-mark.overdue { color: var(--ochre); font-weight: 400; }
+  .status-mark.paid { color: rgba(74,191,168,0.5); }
+
+  /* ─── RIGHT PANEL ─── */
+  .right-panel { display: flex; flex-direction: column; }
+
+  .rp-block {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rpb-label {
+    font-size: 7px;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .rpb-num {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--fg);
+    line-height: 1;
+  }
+
+  .rpb-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--ochre);
+    margin-top: 5px;
+    letter-spacing: 0.06em;
+  }
+
+  /* Grain-feel bar chart */
+  .epoch-bars {
+    margin-top: 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 48px;
+  }
+
+  .eb-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; height: 100%; justify-content: flex-end; }
+  .eb-bar { width: 100%; }
+  .eb-l { font-family: 'DM Mono', monospace; font-size: 5.5px; color: var(--muted); }
+  .eb-l.now { color: var(--ochre); }
+
+  .cat-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cat-line:last-child { border-bottom: none; }
+
+  .cl-name {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--fg2);
+    flex: 1;
+    letter-spacing: 0.01em;
+  }
+
+  .cl-bar { flex: 1; height: 1px; background: var(--muted2); position: relative; overflow: hidden; }
+  .cl-fill { position: absolute; top: 0; left: 0; bottom: 0; background: var(--ochre); opacity: 0.45; }
+  .cl-val { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--fg); width: 44px; text-align: right; }
+
+  .log-line {
+    display: flex;
+    gap: 8px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .log-line:last-child { border-bottom: none; }
+
+  .ll-mark {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .ll-mark.warn { color: var(--ochre); }
+
+  .ll-text { font-size: 11px; font-weight: 400; color: var(--fg2); line-height: 1.5; }
+  .ll-text strong { color: var(--fg); }
+  .ll-time { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); margin-top: 1px; }
+
+  /* ─── STATEMENT ─── */
+  .statement {
+    padding: 24px 48px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+
+  .stmt-text {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+    line-height: 1.8;
+    letter-spacing: 0.04em;
+    font-style: italic;
+    max-width: 680px;
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    padding: 18px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .ft { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  .ft-sig {
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ochre);
+  }
+
+  @keyframes epochIn { from { opacity: 0; } to { opacity: 1; } }
+  body { animation: epochIn 0.5s ease; }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="m-title">Whatismybill</div>
+  <nav class="m-nav">
+    <span class="mn-item active">Overview</span>
+    <span class="mn-item">Bills</span>
+    <span class="mn-item">History</span>
+    <a href="index.html" class="mn-item">← All</a>
+  </nav>
+  <div class="m-date">March 2026 · III</div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-label">Expenditure · March 2026</div>
+  <div class="hero-figure">$571.45</div>
+  <div class="hero-bottom">
+    <div class="hb-note">↑ +$23.17 from February · 8 services active</div>
+    <div class="hb-stat">
+      <div class="hbs-label">Overdue</div>
+      <div class="hbs-val">$89.99</div>
+    </div>
+    <div class="hb-stat">
+      <div class="hbs-label">Due</div>
+      <div class="hbs-val dim">$234.99</div>
+    </div>
+    <div class="hb-stat">
+      <div class="hbs-label">Settled</div>
+      <div class="hbs-val teal">$336.46</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <div class="table-col">
+    <div class="tc-head">
+      <div class="tch-label">Active</div>
+      <div class="tch-count">8 services</div>
+    </div>
+    <div class="th-row">
+      <div class="th-cell">Service</div>
+      <div class="th-cell" style="text-align:right">Due</div>
+      <div class="th-cell" style="text-align:right">Amount</div>
+      <div class="th-cell" style="text-align:right">Status</div>
+    </div>
+
+    <div class="bill-row hi">
+      <div><div class="br-name">AT&T Mobile</div><div class="br-cat">Telecom</div></div>
+      <div class="bc">Mar 15</div>
+      <div class="bc amount">$89.99</div>
+      <div class="bc status"><span class="status-mark overdue">Overdue</span></div>
+    </div>
+    <div class="bill-row">
+      <div><div class="br-name">PG&E Electricity</div><div class="br-cat">Utilities</div></div>
+      <div class="bc">Mar 25</div>
+      <div class="bc amount">$145.50</div>
+      <div class="bc status"><span class="status-mark">Pending</span></div>
+    </div>
+    <div class="bill-row">
+      <div><div class="br-name">Comcast Internet</div><div class="br-cat">Internet</div></div>
+      <div class="bc">Apr 01</div>
+      <div class="bc amount">$79.99</div>
+      <div class="bc status"><span class="status-mark">Pending</span></div>
+    </div>
+    <div class="bill-row">
+      <div><div class="br-name">Equinox Gym</div><div class="br-cat">Fitness</div></div>
+      <div class="bc">Apr 01</div>
+      <div class="bc amount">$185.00</div>
+      <div class="bc status"><span class="status-mark">Pending</span></div>
+    </div>
+    <div class="bill-row">
+      <div><div class="br-name">Netflix</div><div class="br-cat">Streaming</div></div>
+      <div class="bc">Mar 15</div>
+      <div class="bc amount">$22.99</div>
+      <div class="bc status"><span class="status-mark paid">Paid</span></div>
+    </div>
+    <div class="bill-row">
+      <div><div class="br-name">Spotify</div><div class="br-cat">Streaming</div></div>
+      <div class="bc">Mar 18</div>
+      <div class="bc amount">$11.99</div>
+      <div class="bc status"><span class="status-mark paid">Paid</span></div>
+    </div>
+    <div class="bill-row">
+      <div><div class="br-name">Amazon Prime</div><div class="br-cat">Commerce</div></div>
+      <div class="bc">Mar 22</div>
+      <div class="bc amount">$14.99</div>
+      <div class="bc status"><span class="status-mark paid">Paid</span></div>
+    </div>
+    <div class="bill-row">
+      <div><div class="br-name">GitHub Copilot</div><div class="br-cat">Development</div></div>
+      <div class="bc">Mar 20</div>
+      <div class="bc amount">$21.00</div>
+      <div class="bc status"><span class="status-mark paid">Paid</span></div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="rp-block">
+      <div class="rpb-label">Trajectory</div>
+      <div class="rpb-num">$571.45</div>
+      <div class="rpb-sub">↑ +4.2% · 12-month high</div>
+      <div class="epoch-bars">
+        <div class="eb-col"><div class="eb-bar" style="height:50%;background:rgba(255,255,255,0.1)"></div><div class="eb-l">A</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:62%;background:rgba(255,255,255,0.1)"></div><div class="eb-l">M</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:54%;background:rgba(255,255,255,0.1)"></div><div class="eb-l">J</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:69%;background:rgba(255,255,255,0.1)"></div><div class="eb-l">J</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:59%;background:rgba(255,255,255,0.1)"></div><div class="eb-l">A</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:75%;background:rgba(255,255,255,0.12)"></div><div class="eb-l">S</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:64%;background:rgba(255,255,255,0.1)"></div><div class="eb-l">O</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:81%;background:rgba(255,255,255,0.12)"></div><div class="eb-l">N</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:70%;background:rgba(255,255,255,0.1)"></div><div class="eb-l">D</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:77%;background:rgba(255,255,255,0.12)"></div><div class="eb-l">J</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:86%;background:rgba(255,255,255,0.12)"></div><div class="eb-l">F</div></div>
+        <div class="eb-col"><div class="eb-bar" style="height:100%;background:var(--ochre);opacity:0.7"></div><div class="eb-l now">M</div></div>
+      </div>
+    </div>
+
+    <div class="rp-block">
+      <div class="rpb-label">By category</div>
+      <div class="cat-line">
+        <div class="cl-name">Utilities</div>
+        <div class="cl-bar"><div class="cl-fill" style="width:100%"></div></div>
+        <div class="cl-val">$225.49</div>
+      </div>
+      <div class="cat-line">
+        <div class="cl-name">Fitness</div>
+        <div class="cl-bar"><div class="cl-fill" style="width:82%"></div></div>
+        <div class="cl-val">$185.00</div>
+      </div>
+      <div class="cat-line">
+        <div class="cl-name">Internet</div>
+        <div class="cl-bar"><div class="cl-fill" style="width:36%"></div></div>
+        <div class="cl-val">$79.99</div>
+      </div>
+      <div class="cat-line">
+        <div class="cl-name">Other</div>
+        <div class="cl-bar"><div class="cl-fill" style="width:25%"></div></div>
+        <div class="cl-val">$80.97</div>
+      </div>
+    </div>
+
+    <div class="rp-block">
+      <div class="rpb-label">Log</div>
+      <div class="log-line">
+        <div class="ll-mark">✓</div>
+        <div><div class="ll-text"><strong>Spotify</strong> — auto-paid $11.99</div><div class="ll-time">14:32</div></div>
+      </div>
+      <div class="log-line">
+        <div class="ll-mark warn">!</div>
+        <div><div class="ll-text"><strong>AT&T</strong> — payment failed, card declined</div><div class="ll-time">11:15</div></div>
+      </div>
+      <div class="log-line">
+        <div class="ll-mark">→</div>
+        <div><div class="ll-text"><strong>PG&E</strong> — $145.50 due Mar 25</div><div class="ll-time">09:00</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="statement">
+  <div class="stmt-text">In 2030, the premium signal is not smoothness — it is weight. The grain on the background is not an error; it is the mark of intention. This is what money looks like when someone chose every pixel.</div>
+</div>
+
+<footer class="footer">
+  <div class="ft">Epoch · whatismybill.today · 2026</div>
+  <div class="ft-sig">Post-minimalism</div>
+  <div class="ft">Texture as luxury</div>
+</footer>
+
+</body>
+</html>

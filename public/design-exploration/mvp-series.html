@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MVP Series — Design Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root { --bg: #0C0C0C; --fg: #F0F0F0; --muted: #444; --border: #1C1C1C; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 36px 52px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .logo { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+
+  .header-links { display: flex; gap: 12px; }
+
+  .hl { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; border: 1px solid var(--border); padding: 5px 10px; transition: all 0.2s; }
+  .hl:hover { color: var(--fg); border-color: #444; }
+
+  .headline { padding: 44px 52px 14px; }
+  .hs { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.3em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  .ht { font-family: 'Bebas Neue', sans-serif; font-size: clamp(44px, 6vw, 72px); line-height: 0.85; letter-spacing: 0.01em; }
+  .ht span { color: var(--muted); }
+
+  .hdesc { padding: 12px 52px 36px; font-size: 13px; color: var(--muted); max-width: 560px; line-height: 1.7; letter-spacing: 0.01em; }
+
+  /* SECTION LABEL */
+  .section-label {
+    padding: 12px 52px;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    background: rgba(255,255,255,0.01);
+  }
+
+  /* GRID */
+  .cards {
+    display: grid;
+    gap: 0;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cards.grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .cards.grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card {
+    background: var(--bg);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-right: 1px solid var(--border);
+  }
+
+  .card:last-child { border-right: none; }
+  .card:hover { background: #111; }
+
+  .card-preview {
+    width: 100%;
+    aspect-ratio: 16/9;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── BAUS+ preview ── */
+  .prev-bausplus { background: #1C1917; }
+  .prev-bausplus .pb-grid {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+    pointer-events: none;
+  }
+  .pb-c1 { background: #0D9488; opacity: 0.7; }
+  .pb-c2 { background: #F59E0B; opacity: 0.7; }
+  .pb-c3 { background: #0D9488; opacity: 0.4; }
+  .pb-c4 { background: #F97316; opacity: 0.7; }
+  .prev-bausplus .pb-center {
+    position: relative; z-index: 1;
+    text-align: center;
+  }
+  .prev-bausplus .pb-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    color: #FAFAF8;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+  }
+  .prev-bausplus .pb-shapes {
+    display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px;
+  }
+
+  /* ── Apple preview ── */
+  .prev-apple { background: #F5F5F7; }
+  .prev-apple .pa-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 22px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    width: 80%;
+  }
+  .prev-apple .pa-label { font-family: 'Space Grotesk', sans-serif; font-size: 10px; font-weight: 500; color: #6E6E73; margin-bottom: 4px; }
+  .prev-apple .pa-num { font-family: 'Space Grotesk', sans-serif; font-size: 40px; font-weight: 700; color: #0071E3; letter-spacing: -0.04em; line-height: 1; }
+  .prev-apple .pa-sub { font-family: 'Space Grotesk', sans-serif; font-size: 10px; color: #6E6E73; margin-top: 4px; }
+  .prev-apple .pa-pills {
+    display: flex; gap: 6px; margin-top: 12px;
+  }
+  .prev-apple .pa-pill {
+    font-size: 9px; font-weight: 600; padding: 3px 8px;
+    border-radius: 100px; background: rgba(255,149,0,0.12); color: #FF9500;
+  }
+  .prev-apple .pa-pill.green { background: rgba(52,199,89,0.12); color: #34C759; }
+
+  /* ── Google preview ── */
+  .prev-google { background: #FFFBFE; }
+  .prev-google .pg-cards {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; width: 85%; padding: 12px;
+  }
+  .prev-google .pg-card {
+    padding: 12px; border-radius: 16px;
+  }
+  .prev-google .pg-label { font-size: 8px; font-weight: 500; margin-bottom: 4px; }
+  .prev-google .pg-num { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .pgc1 { background: #EADDFF; }
+  .pgc1 .pg-label, .pgc1 .pg-num { color: #21005D; }
+  .pgc2 { background: #FFDDB3; }
+  .pgc2 .pg-label, .pgc2 .pg-num { color: #7A5900; }
+  .pgc3 { background: #B7F396; }
+  .pgc3 .pg-label, .pgc3 .pg-num { color: #386A20; }
+  .pgc4 { background: #F9DEDC; }
+  .pgc4 .pg-label, .pgc4 .pg-num { color: #410E0B; }
+
+  /* ── OpenAI preview ── */
+  .prev-openai { background: #0A0A0A; }
+  .prev-openai .po-row {
+    width: 85%; display: flex; gap: 1px;
+    background: rgba(255,255,255,0.07);
+    margin-bottom: 1px;
+  }
+  .prev-openai .po-cell {
+    background: #111; padding: 8px 12px; flex: 1;
+  }
+  .prev-openai .po-label {
+    font-family: 'DM Mono', monospace; font-size: 7px;
+    letter-spacing: 0.1em; color: rgba(255,255,255,0.35); margin-bottom: 4px;
+  }
+  .prev-openai .po-num {
+    font-family: 'Space Grotesk', sans-serif; font-size: 20px;
+    font-weight: 400; letter-spacing: -0.03em;
+  }
+  .po-green { color: #10A37F; }
+  .po-amber { color: #F5C542; }
+  .po-fg { color: #ECECEC; }
+  .po-red { color: #EF4444; }
+
+  /* ── Claude preview ── */
+  .prev-claude { background: #FAF9F6; }
+  .prev-claude .pc-header {
+    position: absolute; top: 0; left: 0; right: 0;
+    background: #FAF9F6; border-bottom: 1px solid rgba(0,0,0,0.07);
+    padding: 8px 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .prev-claude .pc-dot { width: 8px; height: 8px; border-radius: 50%; background: #D97706; }
+  .prev-claude .pc-brand {
+    font-family: 'Space Grotesk', sans-serif; font-size: 11px;
+    font-weight: 500; color: #1A1714;
+  }
+  .prev-claude .pc-content {
+    margin-top: 32px; padding: 12px 16px; text-align: left; width: 100%;
+  }
+  .prev-claude .pc-label {
+    font-size: 9px; color: #D97706; font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px;
+  }
+  .prev-claude .pc-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px; font-weight: 600; color: #1A1714;
+    letter-spacing: -0.03em; line-height: 1.1;
+  }
+  .prev-claude .pc-sub { font-size: 10px; color: #8C8479; margin-top: 4px; }
+
+  /* CARD INFO */
+  .card-info {
+    padding: 22px 26px 26px;
+    border-top: 1px solid var(--border);
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .card-tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .card-desc {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    line-height: 1.55;
+    max-width: 220px;
+    letter-spacing: 0.01em;
+  }
+
+  .card-arrow {
+    font-size: 18px;
+    color: var(--muted);
+    transition: transform 0.25s, color 0.25s;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  .card:hover .card-arrow { transform: translate(3px, -3px); color: var(--fg); }
+
+  footer {
+    padding: 24px 52px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+  .also-see { display: flex; align-items: center; gap: 12px; font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+  .also-see a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 1px; transition: all 0.2s; }
+  .also-see a:hover { color: var(--fg); border-color: #666; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">whatismybill.today / MVP Series</div>
+  <div class="header-links">
+    <a href="index.html" class="hl">← All 7</a>
+    <a href="grid-series.html" class="hl">Grid Series</a>
+  </div>
+</header>
+
+<div class="headline">
+  <div class="hs">Series 03 — Company Design Languages</div>
+  <div class="ht">MVP<br><span>SERIES</span></div>
+</div>
+<div class="hdesc">Five directions — FORM (evolved Bauhaus), Apple, Google, OpenAI, Claude. Each answers the question: what would this product look like if it shipped from that design culture?</div>
+
+<div class="section-label">01 / Bauhaus 2030 — FORM</div>
+<div class="cards grid-3" style="grid-template-columns:1fr">
+  <a class="card" href="baus-plus.html" style="border-right:none">
+    <div class="card-preview prev-bausplus" style="aspect-ratio:21/6">
+      <div class="pb-grid">
+        <div class="pb-c1"></div>
+        <div class="pb-c2"></div>
+        <div class="pb-c3"></div>
+        <div class="pb-c4"></div>
+      </div>
+      <div class="pb-center">
+        <div class="pb-num">$571.45</div>
+        <div class="pb-shapes">
+          <div style="width:10px;height:10px;background:#0D9488"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:#F59E0B"></div>
+          <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #F97316"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name">FORM</div>
+        <div class="card-tag">Bauhaus 2030 · Dark · Geometric</div>
+        <div class="card-desc">The Bauhaus principles liberated from the museum. Dark foundation, teal/amber/coral color system, geometric shapes as living data language. Feels like a 2030 instrument, not a heritage exhibit.</div>
+      </div>
+      <div class="card-arrow">↗</div>
+    </div>
+  </a>
+</div>
+
+<div class="section-label">02 / Company Design Languages</div>
+<div class="cards grid-2">
+
+  <!-- APPLE -->
+  <a class="card" href="apple.html">
+    <div class="card-preview prev-apple">
+      <div class="pa-card">
+        <div class="pa-label">Monthly Total</div>
+        <div class="pa-num">$571.45</div>
+        <div class="pa-sub">↑ +4.2% · 8 active bills</div>
+        <div class="pa-pills">
+          <div class="pa-pill">Due soon</div>
+          <div class="pa-pill green">4 Paid ✓</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name" style="color:#1D1D1F">APPLE</div>
+        <div class="card-tag">iOS · macOS · Wallet</div>
+        <div class="card-desc" style="color:#6E6E73">Frosted glass nav, SF typography clarity, system color pills, native feel throughout. The bill list feels like a natural extension of Wallet.app.</div>
+      </div>
+      <div class="card-arrow" style="color:#AEAEB2">↗</div>
+    </div>
+  </a>
+
+  <!-- GOOGLE -->
+  <a class="card" href="google.html">
+    <div class="card-preview prev-google">
+      <div class="pg-cards">
+        <div class="pg-card pgc1"><div class="pg-label">Total</div><div class="pg-num">$571</div></div>
+        <div class="pg-card pgc2"><div class="pg-label">Due</div><div class="pg-num">$234</div></div>
+        <div class="pg-card pgc3"><div class="pg-label">Paid</div><div class="pg-num">$336</div></div>
+        <div class="pg-card pgc4"><div class="pg-label">Late</div><div class="pg-num">$89</div></div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name" style="color:#1C1B1F">GOOGLE</div>
+        <div class="card-tag">Material You · M3</div>
+        <div class="card-desc" style="color:#49454F">Material Design 3 — dynamic color tokens, nav rail, assist chips, tonal surface containers. The rounded, accessible, systematically colorful Google universe.</div>
+      </div>
+      <div class="card-arrow" style="color:#79747E">↗</div>
+    </div>
+  </a>
+
+  <!-- OPENAI -->
+  <a class="card" href="openai.html">
+    <div class="card-preview prev-openai">
+      <div style="width:85%;display:flex;flex-direction:column;gap:1px">
+        <div class="po-row">
+          <div class="po-cell"><div class="po-label">Total</div><div class="po-num po-green">$571.45</div></div>
+          <div class="po-cell"><div class="po-label">Due</div><div class="po-num po-amber">$234.99</div></div>
+        </div>
+        <div class="po-row">
+          <div class="po-cell"><div class="po-label">Paid</div><div class="po-num po-fg">$336.46</div></div>
+          <div class="po-cell"><div class="po-label">Overdue</div><div class="po-num po-red">$89.99</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name">OPENAI</div>
+        <div class="card-tag">Playground · API Dashboard</div>
+        <div class="card-desc">Near-black surfaces, monospaced data, the ChatGPT green as the only color permission. Technical precision without coldness. Feels like a tool built alongside a model.</div>
+      </div>
+      <div class="card-arrow">↗</div>
+    </div>
+  </a>
+
+  <!-- CLAUDE -->
+  <a class="card" href="claude.html">
+    <div class="card-preview prev-claude">
+      <div class="pc-header">
+        <div class="pc-dot"></div>
+        <div class="pc-brand">whatismybill</div>
+      </div>
+      <div class="pc-content">
+        <div class="pc-label">March 2026</div>
+        <div class="pc-title">Here's where<br>your money goes.</div>
+        <div class="pc-sub">8 active subscriptions · 1 needs attention</div>
+      </div>
+    </div>
+    <div class="card-info">
+      <div>
+        <div class="card-name" style="color:#1A1714">CLAUDE</div>
+        <div class="card-tag">Anthropic · Warm · Editorial</div>
+        <div class="card-desc" style="color:#8C8479">Warm cream paper, Lora serif headings, amber/coral accents, copy that feels written by a thoughtful person. Financial data presented with genuine warmth, not enterprise polish.</div>
+      </div>
+      <div class="card-arrow" style="color:#B5AFA7">↗</div>
+    </div>
+  </a>
+
+</div>
+
+<footer>
+  <div class="footer-text">MVP Series · 5 Directions · whatismybill.today 2030</div>
+  <div class="also-see">Also see: <a href="index.html">All 7</a> <a href="grid-series.html">Grid Series</a></div>
+</footer>
+
+</body>
+</html>

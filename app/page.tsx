@@ -1088,7 +1088,7 @@ function DashboardPage() {
                     className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-sm">
                     <Upload className="w-4 h-4" /> Upload a bill
                   </button>
-                  <Link href="/?demo=1" className="mt-4 text-xs text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">
+                  <Link href="/demo" className="mt-4 text-xs text-slate-400 hover:text-slate-600 transition-colors underline underline-offset-2">
                     Preview with sample data
                   </Link>
                 </div>

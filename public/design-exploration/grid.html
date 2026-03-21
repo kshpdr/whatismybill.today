@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FFFFFF;
+    --fg: #000000;
+    --muted: #888;
+    --red: #E8190A;
+    --yellow: #FFD600;
+    --border: #000;
+    --border-light: #E0E0E0;
+    --grid: #F0F0F0;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+  }
+
+  /* TICKER BAR */
+  .ticker {
+    background: var(--fg);
+    color: var(--bg);
+    padding: 0 24px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .ticker-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--red);
+    color: #fff;
+    padding: 4px 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-right: 20px;
+  }
+
+  .ticker-track {
+    display: flex;
+    gap: 48px;
+    animation: ticker 20s linear infinite;
+    white-space: nowrap;
+  }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .ticker-item {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+  }
+
+  .ticker-item strong { color: var(--yellow); font-weight: 700; }
+  .ticker-item.up { color: #4CAF50; }
+  .ticker-item.down { color: var(--red); }
+
+  /* HEADER */
+  .site-header {
+    border-bottom: 3px solid var(--fg);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0;
+  }
+
+  .header-date {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    padding: 0 24px;
+  }
+
+  .site-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: -0.01em;
+    text-align: center;
+    padding: 16px 40px;
+    border-left: 3px solid var(--fg);
+    border-right: 3px solid var(--fg);
+  }
+
+  .header-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+  }
+
+  .header-tag {
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border: 2px solid var(--fg);
+    padding: 4px 10px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .header-tag.red { background: var(--red); color: #fff; border-color: var(--red); }
+
+  /* SUB-HEADER */
+  .subheader {
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    padding: 0;
+  }
+
+  .subheader-item {
+    padding: 10px 20px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-right: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .subheader-item:hover { background: var(--grid); }
+  .subheader-item.active { background: var(--fg); color: var(--bg); }
+
+  /* MAIN GRID */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    border-bottom: 3px solid var(--fg);
+  }
+
+  /* HERO STAT */
+  .hero {
+    grid-column: 1 / 3;
+    border-right: 3px solid var(--fg);
+    border-bottom: 3px solid var(--fg);
+    padding: 32px 40px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-number {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 200px;
+    color: var(--grid);
+    line-height: 1;
+    user-select: none;
+  }
+
+  .hero-eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .hero-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 10vw, 120px);
+    line-height: 0.85;
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-number span { color: var(--red); }
+
+  .hero-meta {
+    margin-top: 16px;
+    display: flex;
+    gap: 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-meta-item { }
+  .hero-meta-label {
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .hero-meta-value {
+    font-family: 'IBM Plex Sans Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .hero-stripe {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: var(--red);
+  }
+
+  /* ALERT BOX */
+  .alert-box {
+    background: var(--yellow);
+    border-bottom: 3px solid var(--fg);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .alert-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .alert-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    margin: 8px 0;
+  }
+
+  .alert-desc {
+    font-size: 10px;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+
+  .alert-btn {
+    display: inline-block;
+    margin-top: 16px;
+    background: var(--fg);
+    color: var(--bg);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 700;
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    width: fit-content;
+  }
+
+  /* BILLS LIST */
+  .bills-section {
+    grid-column: 1 / 3;
+    border-right: 3px solid var(--fg);
+  }
+
+  .section-header {
+    border-bottom: 2px solid var(--fg);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.05em;
+  }
+
+  .section-count {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+    padding: 8px 24px;
+    background: var(--grid);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .th {
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .th:not(:first-child) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-light);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .bill-row:hover { background: var(--grid); }
+
+  .bill-row:last-child { border-bottom: none; }
+
+  .bill-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bill-index {
+    font-size: 9px;
+    color: var(--muted);
+    width: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .bill-name-text {
+    font-family: 'IBM Plex Sans Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .bill-cell {
+    font-size: 11px;
+    text-align: right;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+
+  .bill-amount-cell {
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .status-tag {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 6px;
+    text-align: center;
+    float: right;
+  }
+
+  .s-paid { background: var(--fg); color: var(--bg); }
+  .s-due { background: var(--yellow); color: var(--fg); }
+  .s-overdue { background: var(--red); color: #fff; }
+
+  /* RIGHT COLUMN */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* CHART */
+  .chart-block {
+    border-bottom: 3px solid var(--fg);
+    padding: 24px;
+    flex: 1;
+  }
+
+  .chart-block-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .chart-block-sub {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 100px;
+  }
+
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+  .bar-fill {
+    width: 100%;
+    background: var(--fg);
+    transition: height 0.3s ease;
+  }
+
+  .bar-fill.current { background: var(--red); }
+
+  .bar-lbl {
+    font-size: 8px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* CATEGORIES */
+  .cat-block {
+    padding: 0;
+  }
+
+  .cat-header {
+    border-bottom: 2px solid var(--fg);
+    padding: 12px 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.05em;
+  }
+
+  .cat-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border-light);
+    gap: 10px;
+  }
+
+  .cat-row:last-child { border-bottom: none; }
+
+  .cat-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    width: 16px;
+    flex-shrink: 0;
+  }
+
+  .cat-bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--grid);
+    position: relative;
+  }
+
+  .cat-bar-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: var(--fg);
+  }
+
+  .cat-name {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    width: 72px;
+    font-family: 'IBM Plex Sans Condensed', sans-serif;
+  }
+
+  .cat-amt {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    width: 52px;
+    text-align: right;
+  }
+
+  /* LOG */
+  .log-block {
+    border-top: 3px solid var(--fg);
+    padding: 0;
+  }
+
+  .log-header {
+    padding: 12px 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--fg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    grid-column: 1 / -1;
+  }
+
+  .log-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-top: none;
+  }
+
+  .log-item {
+    padding: 16px 24px;
+    border-right: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .log-item:nth-child(3n) { border-right: none; }
+
+  .log-time {
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .log-text {
+    font-size: 11px;
+    line-height: 1.5;
+    font-family: 'IBM Plex Sans Condensed', sans-serif;
+    font-weight: 600;
+  }
+
+  .log-text span { color: var(--red); }
+
+  /* FOOTER */
+  .site-footer {
+    border-top: 3px solid var(--fg);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .back-link {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--fg);
+    border: 2px solid var(--fg);
+    padding: 6px 12px;
+    font-weight: 700;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .back-link:hover { background: var(--fg); color: var(--bg); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .bill-row { animation: slideIn 0.3s ease both; }
+  .bill-row:nth-child(2) { animation-delay: 0.05s; }
+  .bill-row:nth-child(3) { animation-delay: 0.1s; }
+  .bill-row:nth-child(4) { animation-delay: 0.15s; }
+  .bill-row:nth-child(5) { animation-delay: 0.2s; }
+  .bill-row:nth-child(6) { animation-delay: 0.25s; }
+  .bill-row:nth-child(7) { animation-delay: 0.3s; }
+  .bill-row:nth-child(8) { animation-delay: 0.35s; }
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track">
+    <span class="ticker-item">AT&T MOBILE <strong>$89.99</strong> <span style="color:#E8190A">OVERDUE</span></span>
+    <span class="ticker-item">PG&E ELECTRICITY <strong>$145.50</strong> DUE MAR 25</span>
+    <span class="ticker-item">COMCAST <strong>$79.99</strong> DUE APR 01</span>
+    <span class="ticker-item">EQUINOX <strong>$185.00</strong> DUE APR 01</span>
+    <span class="ticker-item">NETFLIX <strong>$22.99</strong> <span style="color:#4CAF50">PAID</span></span>
+    <span class="ticker-item">MONTHLY TOTAL <strong>$571.45</strong> ↑ +4.2%</span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item">AT&T MOBILE <strong>$89.99</strong> <span style="color:#E8190A">OVERDUE</span></span>
+    <span class="ticker-item">PG&E ELECTRICITY <strong>$145.50</strong> DUE MAR 25</span>
+    <span class="ticker-item">COMCAST <strong>$79.99</strong> DUE APR 01</span>
+    <span class="ticker-item">EQUINOX <strong>$185.00</strong> DUE APR 01</span>
+    <span class="ticker-item">NETFLIX <strong>$22.99</strong> <span style="color:#4CAF50">PAID</span></span>
+    <span class="ticker-item">MONTHLY TOTAL <strong>$571.45</strong> ↑ +4.2%</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-date">FRI, MAR 20, 2026 — 14:32 PST</div>
+  <div class="site-title">WHATISMYBILL</div>
+  <div class="header-right">
+    <a href="index.html" style="text-decoration:none"><div class="header-tag">← ALL</div></a>
+    <div class="header-tag red">1 OVERDUE</div>
+  </div>
+</header>
+
+<!-- SUB NAV -->
+<div class="subheader">
+  <div class="subheader-item active">Dashboard</div>
+  <div class="subheader-item">Bills</div>
+  <div class="subheader-item">Analytics</div>
+  <div class="subheader-item">History</div>
+  <div class="subheader-item">Settings</div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-stripe"></div>
+    <div class="hero-bg-number">$571</div>
+    <div class="hero-eyebrow">March 2026 — Monthly Total</div>
+    <div class="hero-number">$<span>571</span>.45</div>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Paid</div>
+        <div class="hero-meta-value">$336.46</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">Due Soon</div>
+        <div class="hero-meta-value">$234.99</div>
+      </div>
+      <div class="hero-meta-item" style="color:var(--red)">
+        <div class="hero-meta-label">Overdue</div>
+        <div class="hero-meta-value">$89.99</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="hero-meta-label">vs Feb</div>
+        <div class="hero-meta-value" style="color:var(--red)">↑ +4.2%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert-box">
+    <div>
+      <div class="alert-label">!! Action Required</div>
+      <div class="alert-amount">$89.99</div>
+      <div class="alert-desc">AT&T Mobile is 5 days overdue. Payment failed on Mar 15 — card declined. Update payment method immediately.</div>
+    </div>
+    <button class="alert-btn">Pay Now →</button>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-block">
+    <div class="chart-block-title">
+      12-Month Trend
+      <span class="chart-block-sub">APR 25 — MAR 26</span>
+    </div>
+    <div class="bar-chart" style="height:80px">
+      <div class="bar-col"><div class="bar-fill" style="height:50%"></div><div class="bar-lbl">A</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:64%"></div><div class="bar-lbl">M</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:54%"></div><div class="bar-lbl">J</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:72%"></div><div class="bar-lbl">J</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:60%"></div><div class="bar-lbl">A</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:76%"></div><div class="bar-lbl">S</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:66%"></div><div class="bar-lbl">O</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:82%"></div><div class="bar-lbl">N</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:70%"></div><div class="bar-lbl">D</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:78%"></div><div class="bar-lbl">J</div></div>
+      <div class="bar-col"><div class="bar-fill" style="height:86%"></div><div class="bar-lbl">F</div></div>
+      <div class="bar-col"><div class="bar-fill current" style="height:100%"></div><div class="bar-lbl" style="color:var(--red);font-weight:700">M</div></div>
+    </div>
+  </div>
+
+  <!-- CAT BLOCK -->
+  <div class="cat-block">
+    <div class="cat-header">By Category</div>
+    <div class="cat-row">
+      <div class="cat-num">01</div>
+      <div class="cat-name">Utilities</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:100%"></div></div>
+      <div class="cat-amt">$225.49</div>
+    </div>
+    <div class="cat-row">
+      <div class="cat-num">02</div>
+      <div class="cat-name">Fitness</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:82%"></div></div>
+      <div class="cat-amt">$185.00</div>
+    </div>
+    <div class="cat-row">
+      <div class="cat-num">03</div>
+      <div class="cat-name">Dev</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:24%"></div></div>
+      <div class="cat-amt">$35.99</div>
+    </div>
+    <div class="cat-row">
+      <div class="cat-num">04</div>
+      <div class="cat-name">Stream</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:22%"></div></div>
+      <div class="cat-amt">$34.98</div>
+    </div>
+    <div class="cat-row">
+      <div class="cat-num">05</div>
+      <div class="cat-name">Shopping</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:10%"></div></div>
+      <div class="cat-amt">$14.99</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BILLS TABLE -->
+<div>
+  <div class="section-header">
+    <div class="section-title">All Bills — March 2026</div>
+    <div class="section-count">8 Records</div>
+  </div>
+  <div class="table-header">
+    <div class="th">Service</div>
+    <div class="th" style="text-align:right">Category</div>
+    <div class="th" style="text-align:right">Due Date</div>
+    <div class="th" style="text-align:right">Amount</div>
+    <div class="th" style="text-align:right">Status</div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">01</div>
+      <div class="bill-name-text">AT&T Mobile</div>
+    </div>
+    <div class="bill-cell">Telecom</div>
+    <div class="bill-cell">Mar 15</div>
+    <div class="bill-amount-cell">$89.99</div>
+    <div><span class="status-tag s-overdue">OVERDUE</span></div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">02</div>
+      <div class="bill-name-text">PG&E Electricity</div>
+    </div>
+    <div class="bill-cell">Utilities</div>
+    <div class="bill-cell">Mar 25</div>
+    <div class="bill-amount-cell">$145.50</div>
+    <div><span class="status-tag s-due">DUE</span></div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">03</div>
+      <div class="bill-name-text">Comcast Internet</div>
+    </div>
+    <div class="bill-cell">Internet</div>
+    <div class="bill-cell">Apr 01</div>
+    <div class="bill-amount-cell">$79.99</div>
+    <div><span class="status-tag s-due">DUE</span></div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">04</div>
+      <div class="bill-name-text">Equinox</div>
+    </div>
+    <div class="bill-cell">Fitness</div>
+    <div class="bill-cell">Apr 01</div>
+    <div class="bill-amount-cell">$185.00</div>
+    <div><span class="status-tag s-due">DUE</span></div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">05</div>
+      <div class="bill-name-text">Netflix</div>
+    </div>
+    <div class="bill-cell">Streaming</div>
+    <div class="bill-cell">Mar 15</div>
+    <div class="bill-amount-cell">$22.99</div>
+    <div><span class="status-tag s-paid">PAID</span></div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">06</div>
+      <div class="bill-name-text">Spotify</div>
+    </div>
+    <div class="bill-cell">Streaming</div>
+    <div class="bill-cell">Mar 18</div>
+    <div class="bill-amount-cell">$11.99</div>
+    <div><span class="status-tag s-paid">PAID</span></div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">07</div>
+      <div class="bill-name-text">Amazon Prime</div>
+    </div>
+    <div class="bill-cell">Shopping</div>
+    <div class="bill-cell">Mar 22</div>
+    <div class="bill-amount-cell">$14.99</div>
+    <div><span class="status-tag s-paid">PAID</span></div>
+  </div>
+
+  <div class="bill-row">
+    <div class="bill-name-cell">
+      <div class="bill-index">08</div>
+      <div class="bill-name-text">GitHub Copilot</div>
+    </div>
+    <div class="bill-cell">Dev</div>
+    <div class="bill-cell">Mar 20</div>
+    <div class="bill-amount-cell">$21.00</div>
+    <div><span class="status-tag s-paid">PAID</span></div>
+  </div>
+</div>
+
+<!-- LOG -->
+<div>
+  <div class="log-header">
+    Activity Log
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);font-weight:400">Today, Mar 20</span>
+  </div>
+  <div class="log-grid">
+    <div class="log-item">
+      <div class="log-time">14:32:01 PST</div>
+      <div class="log-text">Spotify auto-paid — $11.99 via Visa ···4242</div>
+    </div>
+    <div class="log-item">
+      <div class="log-time">11:15:44 PST</div>
+      <div class="log-text"><span>AT&T payment FAILED</span> — card declined, retry needed</div>
+    </div>
+    <div class="log-item">
+      <div class="log-time">09:00:12 PST</div>
+      <div class="log-text">PG&E bill detected — $145.50 due Mar 25</div>
+    </div>
+    <div class="log-item">
+      <div class="log-time">08:47:33 PST</div>
+      <div class="log-text">Monthly forecast updated — <span>+$23.17 vs Feb</span></div>
+    </div>
+    <div class="log-item">
+      <div class="log-time">Yesterday</div>
+      <div class="log-text">GitHub Copilot auto-paid — $21.00 via Visa ···4242</div>
+    </div>
+    <div class="log-item">
+      <div class="log-time">Mar 18</div>
+      <div class="log-text">Amazon Prime auto-paid — $14.99 via Visa ···4242</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <span class="footer-text">WHATISMYBILL.TODAY — DESIGN EXPLORATION — GRID DIRECTION</span>
+  <a href="index.html" class="back-link">← All Directions</a>
+</footer>
+
+</body>
+</html>

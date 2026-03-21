@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ma — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #FAFAF8;
+    --ink: #1A1714;
+    --ink-faint: rgba(26,23,20,0.2);
+    --ink-mid: rgba(26,23,20,0.45);
+    --ink-dim: rgba(26,23,20,0.12);
+    --amber: #C97D15;   /* single accent — warm saffron */
+    --teal: #2A7A72;
+    --red: #A0392B;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── NAVIGATION — almost invisible ─── */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    padding: 28px 52px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+  }
+
+  .nav-mark {
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    pointer-events: all;
+    text-decoration: none;
+    transition: color 0.4s;
+  }
+
+  .nav-mark:hover { color: var(--ink-mid); }
+
+  .nav-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.2em;
+  }
+
+  /* ─── MAIN ─── */
+  .main {
+    min-height: 100vh;
+    padding: 120px 52px 80px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ─── HERO — the number as object ─── */
+  .hero {
+    margin-bottom: 72px;
+  }
+
+  .hero-eyebrow {
+    font-size: 9px;
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 20px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .hero-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(72px, 12vw, 140px);
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    line-height: 0.85;
+  }
+
+  .hero-sub {
+    margin-top: 24px;
+    font-size: 11px;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ─── DIVIDER ─── */
+  .rule {
+    width: 100%;
+    height: 1px;
+    background: var(--ink-dim);
+    margin: 48px 0;
+  }
+
+  .rule-thin {
+    width: 100%;
+    height: 1px;
+    background: var(--ink-dim);
+    opacity: 0.5;
+  }
+
+  /* ─── BILL LIST ─── */
+  .bills {
+    width: 100%;
+  }
+
+  .bills-header {
+    display: grid;
+    grid-template-columns: 1fr 100px 24px;
+    padding: 0 0 12px;
+    gap: 0;
+  }
+
+  .bh-label {
+    font-size: 8px;
+    font-weight: 300;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .bh-label:nth-child(2) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 24px;
+    padding: 16px 0;
+    border-top: 1px solid var(--ink-dim);
+    align-items: center;
+    gap: 0;
+    cursor: default;
+    transition: opacity 0.3s;
+  }
+
+  .bill-row:hover { opacity: 0.7; }
+  .bill-row:last-child { border-bottom: 1px solid var(--ink-dim); }
+
+  .br-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+
+  .br-cat {
+    font-size: 9px;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+    margin-top: 3px;
+  }
+
+  .br-amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 300;
+    text-align: right;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  /* Status as pure geometry — nothing else */
+  .br-status {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    transition: transform 0.3s;
+  }
+
+  .bill-row:hover .status-dot { transform: scale(1.4); }
+
+  .sd-paid { background: var(--teal); opacity: 0.5; }
+  .sd-due { background: var(--amber); opacity: 0.7; }
+  .sd-overdue { background: var(--red); }
+
+  /* ─── BOTTOM SECTION — minimal analytics ─── */
+  .bottom {
+    margin-top: 72px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 40px;
+  }
+
+  .b-cell {}
+
+  .b-cell-label {
+    font-size: 8px;
+    font-weight: 300;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 10px;
+  }
+
+  .b-cell-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .b-cell-value.amber { color: var(--amber); }
+  .b-cell-value.teal { color: var(--teal); }
+  .b-cell-value.red { color: var(--red); }
+
+  .b-cell-note {
+    font-size: 9px;
+    font-weight: 300;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    letter-spacing: 0.1em;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ─── TINY SPARKLINE ─── */
+  .spark-wrap {
+    margin-top: 72px;
+  }
+
+  .spark-label {
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  .spark-line { width: 100%; height: 1px; background: var(--ink-dim); margin-bottom: 24px; }
+
+  .sparkline-svg { width: 100%; height: 32px; }
+
+  .spark-months {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .spark-month {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    color: var(--ink-faint);
+    letter-spacing: 0.15em;
+  }
+
+  .spark-month.now { color: var(--ink-mid); }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    margin-top: 80px;
+    padding-top: 28px;
+    border-top: 1px solid var(--ink-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-size: 8px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .footer-right {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+  }
+
+  /* ANIMATIONS — very slow, intentional */
+  @keyframes emerge { from { opacity: 0; } to { opacity: 1; } }
+
+  .hero { animation: emerge 1.2s ease; }
+  .bills { animation: emerge 1.4s 0.1s ease both; }
+  .bottom { animation: emerge 1.4s 0.2s ease both; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="nav-mark">← whatismybill</a>
+  <div class="nav-date">March / 2026</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- HERO — the number owns the space -->
+  <div class="hero">
+    <div class="hero-eyebrow">Total expenditure</div>
+    <div class="hero-number">$571.45</div>
+    <div class="hero-sub">↑ 4.2 percent — February to March</div>
+  </div>
+
+  <!-- BILLS -->
+  <div class="bills">
+    <div class="bills-header">
+      <div class="bh-label">Service</div>
+      <div class="bh-label">Amount</div>
+      <div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">AT&T Mobile</div><div class="br-cat">Telecom</div></div>
+      <div class="br-amount">$89.99</div>
+      <div class="br-status"><div class="status-dot sd-overdue"></div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">PG&E Electricity</div><div class="br-cat">Utilities</div></div>
+      <div class="br-amount">$145.50</div>
+      <div class="br-status"><div class="status-dot sd-due"></div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">Comcast Internet</div><div class="br-cat">Internet</div></div>
+      <div class="br-amount">$79.99</div>
+      <div class="br-status"><div class="status-dot sd-due"></div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">Equinox</div><div class="br-cat">Fitness</div></div>
+      <div class="br-amount">$185.00</div>
+      <div class="br-status"><div class="status-dot sd-due"></div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">Netflix</div><div class="br-cat">Streaming</div></div>
+      <div class="br-amount">$22.99</div>
+      <div class="br-status"><div class="status-dot sd-paid"></div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">Spotify</div><div class="br-cat">Streaming</div></div>
+      <div class="br-amount">$11.99</div>
+      <div class="br-status"><div class="status-dot sd-paid"></div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">Amazon Prime</div><div class="br-cat">Commerce</div></div>
+      <div class="br-amount">$14.99</div>
+      <div class="br-status"><div class="status-dot sd-paid"></div></div>
+    </div>
+
+    <div class="bill-row">
+      <div><div class="br-name">GitHub Copilot</div><div class="br-cat">Development</div></div>
+      <div class="br-amount">$21.00</div>
+      <div class="br-status"><div class="status-dot sd-paid"></div></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM STATS -->
+  <div class="bottom">
+    <div class="b-cell">
+      <div class="b-cell-label">Settled</div>
+      <div class="b-cell-value teal">$336.46</div>
+      <div class="b-cell-note">4 services</div>
+    </div>
+    <div class="b-cell">
+      <div class="b-cell-label">Pending</div>
+      <div class="b-cell-value amber">$234.99</div>
+      <div class="b-cell-note">3 services</div>
+    </div>
+    <div class="b-cell">
+      <div class="b-cell-label">Overdue</div>
+      <div class="b-cell-value red">$89.99</div>
+      <div class="b-cell-note">AT&T — act</div>
+    </div>
+  </div>
+
+  <!-- SPARKLINE -->
+  <div class="spark-wrap">
+    <div class="spark-label">12-month trajectory</div>
+    <svg class="sparkline-svg" viewBox="0 0 900 32" preserveAspectRatio="none">
+      <path d="M0,26 L75,23 L150,21 L225,24 L300,19 L375,22 L450,16 L525,20 L600,14 L675,17 L750,12 L900,7"
+        fill="none" stroke="rgba(26,23,20,0.2)" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="900" cy="7" r="2.5" fill="var(--amber)"/>
+    </svg>
+    <div class="spark-months">
+      <span class="spark-month">APR</span>
+      <span class="spark-month">MAY</span>
+      <span class="spark-month">JUN</span>
+      <span class="spark-month">JUL</span>
+      <span class="spark-month">AUG</span>
+      <span class="spark-month">SEP</span>
+      <span class="spark-month">OCT</span>
+      <span class="spark-month">NOV</span>
+      <span class="spark-month">DEC</span>
+      <span class="spark-month">JAN</span>
+      <span class="spark-month">FEB</span>
+      <span class="spark-month now">MAR</span>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">whatismybill.today · 2026 · ○ due · ■ paid · ● overdue</div>
+    <div class="footer-right">間 — emptiness as the active element</div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORM — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200;300;400;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1C1917;
+    --ink2: #292524;
+    --paper: #FAFAF8;
+    --cream: #FEF3C0;
+    --teal: #0D9488;
+    --teal-dim: rgba(13,148,136,0.12);
+    --amber: #F59E0B;
+    --amber-dim: rgba(245,158,11,0.12);
+    --coral: #F97316;
+    --coral-dim: rgba(249,115,22,0.12);
+    --muted: #78716C;
+    --rule: #E7E5E4;
+  }
+
+  html, body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Unbounded', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─────────────────────────────
+     HEADER
+  ───────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 0 36px;
+    height: 56px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    gap: 0;
+  }
+
+  .header-logo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 40px;
+  }
+
+  /* 2030 shape trio — refined */
+  .shape-set {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .s-sq { width: 8px; height: 8px; background: var(--teal); }
+  .s-ci { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+  .s-tr { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid var(--coral); }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+  }
+
+  .nav-item {
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    padding: 0 16px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: color 0.2s;
+    text-decoration: none;
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .nav-item:hover { color: rgba(255,255,255,0.7); }
+  .nav-item.active { color: var(--paper); }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .period-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.06em;
+    padding: 5px 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .alert-mark {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--coral);
+    padding: 5px 12px;
+    background: rgba(249,115,22,0.1);
+    border: 1px solid rgba(249,115,22,0.2);
+  }
+
+  .alert-mark .s-tr { border-bottom-width: 7px; }
+
+  /* ─────────────────────────────
+     HERO — 4 COLOR BLOCKS
+  ───────────────────────────── */
+  .hero {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .hero-cell {
+    padding: 32px 32px 28px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-cell:last-child { border-right: none; }
+
+  .hero-shape {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .hc-eyebrow {
+    font-size: 8px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .hc-value {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.85;
+    color: var(--paper);
+  }
+
+  .hc-value.xl { font-size: clamp(56px, 7vw, 80px); }
+
+  .hc-delta {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 14px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Colored hero cells */
+  .hc-amber { background: var(--amber); }
+  .hc-amber .hc-eyebrow { color: rgba(0,0,0,0.45); }
+  .hc-amber .hc-value { color: #1C1917; }
+  .hc-amber .hc-delta { color: rgba(0,0,0,0.45); }
+
+  .hc-coral { background: var(--coral); }
+  .hc-coral .hc-eyebrow { color: rgba(255,255,255,0.55); }
+  .hc-coral .hc-value { color: #fff; }
+  .hc-coral .hc-delta { color: rgba(255,255,255,0.55); }
+
+  .hc-teal { background: var(--teal); }
+  .hc-teal .hc-eyebrow { color: rgba(255,255,255,0.55); }
+  .hc-teal .hc-value { color: #fff; }
+  .hc-teal .hc-delta { color: rgba(255,255,255,0.55); }
+
+  /* ─────────────────────────────
+     MAIN LAYOUT
+  ───────────────────────────── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+  }
+
+  /* BILLS */
+  .bills-col {
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .section-head {
+    padding: 14px 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sh-title {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .sh-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.08em;
+  }
+
+  .table-cols {
+    display: grid;
+    grid-template-columns: 28px 1fr 80px 80px 100px 80px;
+    padding: 8px 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .tc {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+  }
+
+  .tc:not(:first-child) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 80px 80px 100px 80px;
+    padding: 13px 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .bill-row:hover { background: rgba(255,255,255,0.03); }
+  .bill-row:last-child { border-bottom: none; }
+
+  .br-idx {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: rgba(255,255,255,0.12);
+  }
+
+  .br-name { font-size: 11px; font-weight: 400; color: var(--paper); letter-spacing: 0.01em; }
+  .br-cat { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.25); margin-top: 2px; }
+
+  .br-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: rgba(255,255,255,0.25);
+    text-align: right;
+    letter-spacing: 0.03em;
+  }
+
+  .br-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--paper);
+    text-align: right;
+  }
+
+  .br-status { display: flex; justify-content: flex-end; }
+
+  /* Geometric status badges */
+  .status-geo {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .sg-paid { color: var(--teal); }
+  .sg-due { color: var(--amber); }
+  .sg-overdue { color: var(--coral); }
+
+  .sg-icon { flex-shrink: 0; }
+  .sq-icon { width: 6px; height: 6px; background: var(--teal); }
+  .ci-icon { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+  .tr-icon { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid var(--coral); animation: flicker 2s ease-in-out infinite alternate; }
+
+  @keyframes flicker { from { opacity: 1; } to { opacity: 0.4; } }
+
+  /* ─────────────────────────────
+     RIGHT COLUMN
+  ───────────────────────────── */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* CHART */
+  .chart-panel {
+    padding: 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .cp-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    margin-bottom: 8px;
+  }
+
+  .cp-total {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: var(--paper);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .cp-delta {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: 0.04em;
+    margin-bottom: 20px;
+  }
+
+  /* Geometric bar chart — squares */
+  .geo-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 72px;
+  }
+
+  .geo-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end; }
+  .geo-bar { width: 100%; }
+  .geo-bar-lbl { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.2); }
+  .geo-bar-lbl.hi { color: var(--amber); font-weight: 500; }
+
+  /* BREAKDOWN */
+  .breakdown-panel {
+    padding: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .bd-head {
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .bd-head-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .bd-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .bd-row:last-child { border-bottom: none; }
+
+  .bd-shape { flex-shrink: 0; }
+  .bd-name { font-size: 10px; font-weight: 300; color: rgba(255,255,255,0.5); flex: 1; letter-spacing: 0.02em; }
+  .bd-track { flex: 1.5; height: 2px; background: rgba(255,255,255,0.06); position: relative; overflow: hidden; }
+  .bd-fill { position: absolute; top: 0; left: 0; bottom: 0; }
+  .bd-amt { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--paper); width: 48px; text-align: right; }
+
+  /* LOG */
+  .log-panel { padding: 0; }
+
+  .log-head {
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .log-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    align-items: flex-start;
+  }
+
+  .log-item:last-child { border-bottom: none; }
+
+  .log-shape { margin-top: 4px; flex-shrink: 0; }
+  .log-text { font-size: 10px; font-weight: 300; color: rgba(255,255,255,0.45); line-height: 1.5; }
+  .log-text strong { color: var(--paper); font-weight: 400; }
+  .log-time { font-family: 'DM Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.2); margin-top: 2px; }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 16px 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    color: rgba(255,255,255,0.18);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .back-link {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover { color: var(--paper); }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .hero { animation: fadeUp 0.4s ease; }
+  .main { animation: fadeUp 0.5s 0.08s ease both; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <div class="shape-set">
+      <div class="s-sq"></div>
+      <div class="s-ci"></div>
+      <div class="s-tr"></div>
+    </div>
+    whatismybill
+  </div>
+  <nav class="header-nav">
+    <span class="nav-item active">Overview</span>
+    <span class="nav-item">Bills</span>
+    <span class="nav-item">Analytics</span>
+    <a href="index.html" class="nav-item">← Back</a>
+  </nav>
+  <div class="header-right">
+    <div class="period-pill">March 2026</div>
+    <div class="alert-mark">
+      <div class="s-tr"></div>
+      Overdue
+    </div>
+  </div>
+</header>
+
+<!-- HERO BLOCKS -->
+<div class="hero">
+  <div class="hero-cell">
+    <div class="hero-shape">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="80" fill="white"/>
+      </svg>
+    </div>
+    <div class="hc-eyebrow">Monthly Total · March 2026</div>
+    <div class="hc-value xl">$571.45</div>
+    <div class="hc-delta">↑ +$23.17 from February · 8 active services</div>
+  </div>
+
+  <div class="hero-cell hc-amber">
+    <div class="hero-shape">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <polygon points="60,0 120,120 0,120" fill="black"/>
+      </svg>
+    </div>
+    <div class="hc-eyebrow">Due This Week</div>
+    <div class="hc-value">$234.99</div>
+    <div class="hc-delta">3 bills pending</div>
+  </div>
+
+  <div class="hero-cell hc-teal">
+    <div class="hero-shape">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="white"/>
+      </svg>
+    </div>
+    <div class="hc-eyebrow">Paid</div>
+    <div class="hc-value">$336.46</div>
+    <div class="hc-delta">4 settled</div>
+  </div>
+
+  <div class="hero-cell hc-coral">
+    <div class="hero-shape">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <polygon points="50,0 100,100 0,100" fill="white"/>
+      </svg>
+    </div>
+    <div class="hc-eyebrow">Overdue</div>
+    <div class="hc-value">$89.99</div>
+    <div class="hc-delta">AT&T · act now</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- BILLS -->
+  <div class="bills-col">
+    <div class="section-head">
+      <div class="sh-title">Active Bills</div>
+      <div class="sh-count">8 of 8</div>
+    </div>
+    <div class="table-cols">
+      <div class="tc">#</div>
+      <div class="tc">Service</div>
+      <div class="tc" style="text-align:right">Cat.</div>
+      <div class="tc" style="text-align:right">Due</div>
+      <div class="tc" style="text-align:right">Amount</div>
+      <div class="tc" style="text-align:right">Status</div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">01</div>
+      <div><div class="br-name">AT&T Mobile</div><div class="br-cat">Telecom</div></div>
+      <div class="br-cell">Mobile</div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$89.99</div>
+      <div class="br-status"><div class="status-geo sg-overdue"><div class="sg-icon"><div class="tr-icon"></div></div>Overdue</div></div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">02</div>
+      <div><div class="br-name">PG&E Electricity</div><div class="br-cat">Utilities</div></div>
+      <div class="br-cell">Utility</div>
+      <div class="br-cell">Mar 25</div>
+      <div class="br-amount">$145.50</div>
+      <div class="br-status"><div class="status-geo sg-due"><div class="sg-icon"><div class="ci-icon"></div></div>Due</div></div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">03</div>
+      <div><div class="br-name">Comcast Internet</div><div class="br-cat">Internet</div></div>
+      <div class="br-cell">Internet</div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$79.99</div>
+      <div class="br-status"><div class="status-geo sg-due"><div class="sg-icon"><div class="ci-icon"></div></div>Due</div></div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">04</div>
+      <div><div class="br-name">Equinox Gym</div><div class="br-cat">Fitness</div></div>
+      <div class="br-cell">Fitness</div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$185.00</div>
+      <div class="br-status"><div class="status-geo sg-due"><div class="sg-icon"><div class="ci-icon"></div></div>Due</div></div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">05</div>
+      <div><div class="br-name">Netflix</div><div class="br-cat">Streaming</div></div>
+      <div class="br-cell">Stream</div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$22.99</div>
+      <div class="br-status"><div class="status-geo sg-paid"><div class="sg-icon"><div class="sq-icon"></div></div>Paid</div></div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">06</div>
+      <div><div class="br-name">Spotify</div><div class="br-cat">Streaming</div></div>
+      <div class="br-cell">Stream</div>
+      <div class="br-cell">Mar 18</div>
+      <div class="br-amount">$11.99</div>
+      <div class="br-status"><div class="status-geo sg-paid"><div class="sg-icon"><div class="sq-icon"></div></div>Paid</div></div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">07</div>
+      <div><div class="br-name">Amazon Prime</div><div class="br-cat">Shopping</div></div>
+      <div class="br-cell">Misc</div>
+      <div class="br-cell">Mar 22</div>
+      <div class="br-amount">$14.99</div>
+      <div class="br-status"><div class="status-geo sg-paid"><div class="sg-icon"><div class="sq-icon"></div></div>Paid</div></div>
+    </div>
+
+    <div class="bill-row">
+      <div class="br-idx">08</div>
+      <div><div class="br-name">GitHub Copilot</div><div class="br-cat">Dev</div></div>
+      <div class="br-cell">Dev</div>
+      <div class="br-cell">Mar 20</div>
+      <div class="br-amount">$21.00</div>
+      <div class="br-status"><div class="status-geo sg-paid"><div class="sg-icon"><div class="sq-icon"></div></div>Paid</div></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+
+    <div class="chart-panel">
+      <div class="cp-eyebrow">Spending · 12 months</div>
+      <div class="cp-total">$571.45</div>
+      <div class="cp-delta">↑ +$23.17 vs February</div>
+      <div class="geo-bars">
+        <div class="geo-bar-col"><div class="geo-bar" style="height:50%;background:rgba(255,255,255,0.1)"></div><div class="geo-bar-lbl">A</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:65%;background:rgba(255,255,255,0.13)"></div><div class="geo-bar-lbl">M</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:54%;background:rgba(255,255,255,0.1)"></div><div class="geo-bar-lbl">J</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:72%;background:rgba(13,148,136,0.4)"></div><div class="geo-bar-lbl">J</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:61%;background:rgba(255,255,255,0.1)"></div><div class="geo-bar-lbl">A</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:77%;background:rgba(13,148,136,0.4)"></div><div class="geo-bar-lbl">S</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:67%;background:rgba(255,255,255,0.1)"></div><div class="geo-bar-lbl">O</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:83%;background:rgba(13,148,136,0.5)"></div><div class="geo-bar-lbl">N</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:71%;background:rgba(255,255,255,0.12)"></div><div class="geo-bar-lbl">D</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:78%;background:rgba(13,148,136,0.5)"></div><div class="geo-bar-lbl">J</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:87%;background:rgba(245,158,11,0.6)"></div><div class="geo-bar-lbl">F</div></div>
+        <div class="geo-bar-col"><div class="geo-bar" style="height:100%;background:var(--amber)"></div><div class="geo-bar-lbl hi">M</div></div>
+      </div>
+    </div>
+
+    <div class="breakdown-panel">
+      <div class="bd-head"><div class="bd-head-label">By Category</div></div>
+      <div class="bd-row">
+        <div class="bd-shape"><div class="sq-icon" style="background:var(--teal)"></div></div>
+        <div class="bd-name">Utilities</div>
+        <div class="bd-track"><div class="bd-fill" style="width:100%;background:var(--teal);opacity:0.6"></div></div>
+        <div class="bd-amt">$225.49</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-shape"><div class="ci-icon" style="background:var(--amber)"></div></div>
+        <div class="bd-name">Fitness</div>
+        <div class="bd-track"><div class="bd-fill" style="width:82%;background:var(--amber);opacity:0.6"></div></div>
+        <div class="bd-amt">$185.00</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-shape"><div class="tr-icon" style="border-bottom-color:var(--coral);animation:none"></div></div>
+        <div class="bd-name">Internet</div>
+        <div class="bd-track"><div class="bd-fill" style="width:36%;background:var(--coral);opacity:0.6"></div></div>
+        <div class="bd-amt">$79.99</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-shape"><div class="sq-icon" style="background:rgba(255,255,255,0.2)"></div></div>
+        <div class="bd-name">Other</div>
+        <div class="bd-track"><div class="bd-fill" style="width:28%;background:rgba(255,255,255,0.15)"></div></div>
+        <div class="bd-amt">$80.97</div>
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <div class="log-head"><div class="bd-head-label">Activity</div></div>
+      <div class="log-item">
+        <div class="log-shape"><div class="sq-icon" style="background:var(--teal)"></div></div>
+        <div><div class="log-text"><strong>Spotify</strong> auto-paid $11.99</div><div class="log-time">14:32 today</div></div>
+      </div>
+      <div class="log-item">
+        <div class="log-shape"><div class="tr-icon" style="border-bottom-color:var(--coral);animation:none"></div></div>
+        <div><div class="log-text"><strong>AT&T</strong> payment failed — card declined</div><div class="log-time">11:15 today</div></div>
+      </div>
+      <div class="log-item">
+        <div class="log-shape"><div class="ci-icon" style="background:var(--amber)"></div></div>
+        <div><div class="log-text"><strong>PG&E</strong> bill detected — $145.50</div><div class="log-time">09:00 today</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-text">Form · whatismybill.today · 2030 · ■●▲</div>
+  <a href="index.html" class="back-link">← All Directions</a>
+</footer>
+
+</body>
+</html>

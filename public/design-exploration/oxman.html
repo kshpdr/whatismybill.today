@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecology — whatismybill.today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0B0F0E;
+    --bg2: #0F1513;
+    --bg3: #141A18;
+    --border: rgba(255,255,255,0.05);
+    --border2: rgba(255,255,255,0.09);
+    --fg: #E8F0EE;
+    --fg2: rgba(232,240,238,0.6);
+    --muted: rgba(232,240,238,0.28);
+    --muted2: rgba(232,240,238,0.1);
+
+    /* Bio-luminescent palette */
+    --teal: #0ADFB4;
+    --teal-dim: rgba(10,223,180,0.08);
+    --teal-glow: rgba(10,223,180,0.18);
+    --amber: #F5A623;
+    --amber-dim: rgba(245,166,35,0.08);
+    --amber-glow: rgba(245,166,35,0.18);
+    --coral: #FF5E5B;
+    --coral-dim: rgba(255,94,91,0.08);
+    --coral-glow: rgba(255,94,91,0.15);
+    --bio-purple: #A78BFA;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Jost', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ─── ORGANISM BACKGROUND ─── */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.12;
+    animation: drift linear infinite;
+  }
+
+  .orb-1 {
+    width: 500px; height: 500px;
+    background: var(--teal);
+    top: -150px; left: -100px;
+    animation-duration: 40s;
+    animation-delay: 0s;
+  }
+
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: var(--amber);
+    top: 30%; right: -100px;
+    animation-duration: 35s;
+    animation-delay: -10s;
+  }
+
+  .orb-3 {
+    width: 300px; height: 300px;
+    background: var(--coral);
+    bottom: -100px; left: 30%;
+    animation-duration: 45s;
+    animation-delay: -20s;
+  }
+
+  .orb-4 {
+    width: 250px; height: 250px;
+    background: var(--bio-purple);
+    top: 60%; left: 10%;
+    animation-duration: 30s;
+    animation-delay: -5s;
+    opacity: 0.06;
+  }
+
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(30px, 20px) scale(1.05); }
+    50% { transform: translate(10px, 40px) scale(0.97); }
+    75% { transform: translate(-20px, 15px) scale(1.03); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+
+  /* ─── CONTENT ─── */
+  .shell {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(11,15,14,0.6);
+    backdrop-filter: blur(12px);
+  }
+
+  .h-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 40px;
+  }
+
+  /* Organic logo mark — like a membrane cross-section */
+  .logo-mark {
+    width: 28px; height: 28px;
+    position: relative;
+  }
+
+  .logo-mark svg { width: 28px; height: 28px; }
+
+  .h-name {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--fg);
+    letter-spacing: 0.02em;
+  }
+
+  .h-nav {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+  }
+
+  .hn {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--muted);
+    padding: 0 16px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: color 0.2s;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+  }
+
+  .hn:hover { color: var(--fg2); }
+  .hn.active { color: var(--fg); }
+
+  .h-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .period-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--teal);
+    letter-spacing: 0.15em;
+    padding: 5px 10px;
+    border: 1px solid rgba(10,223,180,0.2);
+    background: rgba(10,223,180,0.04);
+    border-radius: 2px;
+  }
+
+  /* ─── MEMBRANE HERO — 4 organic cells ─── */
+  .membrane {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .membrane::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(10,223,180,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .cell {
+    padding: 32px 32px 28px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cell:last-child { border-right: none; }
+
+  /* Each cell has a subtle organic glow in its corner */
+  .cell::before {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    right: -30px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.25;
+    pointer-events: none;
+  }
+
+  .c1::before { background: var(--teal); }
+  .c2::before { background: var(--amber); }
+  .c3::before { background: var(--teal); opacity: 0.15; }
+  .c4::before { background: var(--coral); }
+
+  .cell-label {
+    font-size: 8px;
+    font-weight: 300;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 10px;
+  }
+
+  .cell-num {
+    font-size: clamp(40px, 5.5vw, 68px);
+    font-weight: 200;
+    letter-spacing: -0.04em;
+    color: var(--fg);
+    line-height: 0.85;
+  }
+
+  .cell-num.teal { color: var(--teal); }
+  .cell-num.amber { color: var(--amber); }
+  .cell-num.coral { color: var(--coral); }
+
+  .cell-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 10px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+  }
+
+  /* ─── BILL LIST ─── */
+  .bill-col {
+    border-right: 1px solid var(--border);
+  }
+
+  .col-head {
+    padding: 14px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(11,15,14,0.4);
+  }
+
+  .ch-label {
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .ch-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  .table-cols {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px;
+    padding: 8px 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.01);
+  }
+
+  .tc {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.15);
+  }
+
+  .tc:not(:first-child) { text-align: right; }
+
+  .bill-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 80px;
+    padding: 13px 32px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* The organic hover — spreads like a cell membrane */
+  .bill-row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 0;
+    transition: width 0.3s ease;
+    opacity: 0.4;
+  }
+
+  .bill-row:hover::before { width: 2px; }
+  .bill-row.status-overdue::before { background: var(--coral); }
+  .bill-row.status-due::before { background: var(--amber); }
+  .bill-row.status-paid::before { background: var(--teal); }
+
+  .bill-row:hover { background: rgba(255,255,255,0.02); }
+
+  .br-info {}
+  .br-name { font-size: 13px; font-weight: 400; color: var(--fg); letter-spacing: 0.01em; }
+  .br-cat { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); margin-top: 2px; letter-spacing: 0.1em; }
+
+  .br-cell {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .br-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--fg);
+    text-align: right;
+    font-weight: 400;
+  }
+
+  .br-status { display: flex; justify-content: flex-end; }
+
+  /* Organic status — glowing dot */
+  .bio-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .bio-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .bd-paid { background: var(--teal); box-shadow: 0 0 6px var(--teal-glow); }
+  .bd-due { background: var(--amber); box-shadow: 0 0 6px var(--amber-glow); }
+  .bd-overdue { background: var(--coral); box-shadow: 0 0 8px var(--coral-glow); animation: pulse-bio 2s ease-in-out infinite; }
+
+  @keyframes pulse-bio {
+    0%, 100% { box-shadow: 0 0 6px var(--coral-glow); opacity: 1; }
+    50% { box-shadow: 0 0 14px rgba(255,94,91,0.4); opacity: 0.7; }
+  }
+
+  .bs-paid { color: rgba(10,223,180,0.6); }
+  .bs-due { color: rgba(245,166,35,0.7); }
+  .bs-overdue { color: var(--coral); }
+
+  /* ─── RIGHT — ORGANIC VISUALIZATIONS ─── */
+  .right-col { display: flex; flex-direction: column; }
+
+  .r-block {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rb-label {
+    font-size: 8px;
+    font-weight: 300;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .rb-total {
+    font-size: 32px;
+    font-weight: 200;
+    letter-spacing: -0.04em;
+    color: var(--fg);
+    line-height: 1;
+  }
+
+  .rb-delta { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--amber); margin-top: 4px; }
+
+  /* Organic waveform instead of bar chart */
+  .bio-chart {
+    margin-top: 16px;
+    position: relative;
+    height: 64px;
+  }
+
+  .bio-chart svg { width: 100%; height: 64px; }
+
+  .month-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .ml { font-family: 'DM Mono', monospace; font-size: 7px; color: var(--muted); }
+  .ml.now { color: var(--teal); }
+
+  /* CONTOUR BREAKDOWN — organic data */
+  .contour-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .contour-item:last-child { border-bottom: none; }
+
+  .ci-ring {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .ci-ring::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px; height: 4px;
+    border-radius: 50%;
+  }
+
+  .cir-teal { border-color: var(--teal); }
+  .cir-teal::after { background: var(--teal); box-shadow: 0 0 4px var(--teal-glow); }
+  .cir-amber { border-color: var(--amber); }
+  .cir-amber::after { background: var(--amber); box-shadow: 0 0 4px var(--amber-glow); }
+  .cir-coral { border-color: var(--coral); }
+  .cir-coral::after { background: var(--coral); box-shadow: 0 0 4px var(--coral-glow); }
+  .cir-muted { border-color: var(--muted2); }
+  .cir-muted::after { background: rgba(255,255,255,0.2); }
+
+  .ci-name { font-size: 11px; font-weight: 300; color: var(--fg2); flex: 1; }
+  .ci-bar { flex: 1; height: 2px; background: var(--muted2); position: relative; overflow: hidden; border-radius: 1px; }
+  .ci-fill { position: absolute; top: 0; left: 0; bottom: 0; border-radius: 1px; }
+  .ci-val { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--fg); width: 46px; text-align: right; }
+
+  /* LOG */
+  .log-entry {
+    display: flex;
+    gap: 8px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+
+  .le-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .le-text { font-size: 11px; font-weight: 300; color: var(--fg2); line-height: 1.5; }
+  .le-text strong { font-weight: 400; color: var(--fg); }
+  .le-time { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); margin-top: 1px; }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 16px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(11,15,14,0.6);
+    backdrop-filter: blur(8px);
+  }
+
+  .ft { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  @keyframes bioFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .membrane { animation: bioFade 0.6s ease; }
+  .main { animation: bioFade 0.7s 0.08s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ORGANIC BACKGROUND LAYER -->
+<div class="bg-layer">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="orb orb-4"></div>
+</div>
+
+<div class="shell">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="h-logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 28 28" fill="none">
+        <ellipse cx="14" cy="14" rx="12" ry="12" stroke="rgba(10,223,180,0.4)" stroke-width="0.5"/>
+        <ellipse cx="14" cy="14" rx="8" ry="9" stroke="rgba(10,223,180,0.3)" stroke-width="0.5"/>
+        <ellipse cx="14" cy="14" rx="4" ry="5" stroke="rgba(10,223,180,0.5)" stroke-width="0.5"/>
+        <circle cx="14" cy="14" r="1.5" fill="#0ADFB4" opacity="0.8"/>
+      </svg>
+    </div>
+    <div class="h-name">whatismybill</div>
+  </div>
+  <nav class="h-nav">
+    <span class="hn active">Overview</span>
+    <span class="hn">Organisms</span>
+    <span class="hn">Growth</span>
+    <a href="index.html" class="hn">← Back</a>
+  </nav>
+  <div class="h-right">
+    <div class="period-tag">2026 · III</div>
+  </div>
+</header>
+
+<!-- MEMBRANE HERO -->
+<div class="membrane">
+  <div class="cell c1">
+    <div class="cell-label">Total mass · March</div>
+    <div class="cell-num">$571.45</div>
+    <div class="cell-note">↑ +4.2% growth from February</div>
+  </div>
+  <div class="cell c2">
+    <div class="cell-label">Pending</div>
+    <div class="cell-num amber">$234.99</div>
+    <div class="cell-note">3 organisms</div>
+  </div>
+  <div class="cell c3">
+    <div class="cell-label">Resolved</div>
+    <div class="cell-num teal">$336.46</div>
+    <div class="cell-note">4 settled</div>
+  </div>
+  <div class="cell c4">
+    <div class="cell-label">Critical</div>
+    <div class="cell-num coral">$89.99</div>
+    <div class="cell-note">AT&T — pulse</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <div class="bill-col">
+    <div class="col-head">
+      <div class="ch-label">Active Organisms</div>
+      <div class="ch-count">8 of 8</div>
+    </div>
+    <div class="table-cols">
+      <div class="tc">Species</div>
+      <div class="tc" style="text-align:right">Due</div>
+      <div class="tc" style="text-align:right">Mass</div>
+      <div class="tc" style="text-align:right">State</div>
+    </div>
+
+    <div class="bill-row status-overdue">
+      <div class="br-info"><div class="br-name">AT&T Mobile</div><div class="br-cat">Telecom</div></div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$89.99</div>
+      <div class="br-status"><div class="bio-status bs-overdue"><div class="bio-dot bd-overdue"></div>Critical</div></div>
+    </div>
+    <div class="bill-row status-due">
+      <div class="br-info"><div class="br-name">PG&E Electricity</div><div class="br-cat">Utilities</div></div>
+      <div class="br-cell">Mar 25</div>
+      <div class="br-amount">$145.50</div>
+      <div class="br-status"><div class="bio-status bs-due"><div class="bio-dot bd-due"></div>Active</div></div>
+    </div>
+    <div class="bill-row status-due">
+      <div class="br-info"><div class="br-name">Comcast Internet</div><div class="br-cat">Internet</div></div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$79.99</div>
+      <div class="br-status"><div class="bio-status bs-due"><div class="bio-dot bd-due"></div>Active</div></div>
+    </div>
+    <div class="bill-row status-due">
+      <div class="br-info"><div class="br-name">Equinox Gym</div><div class="br-cat">Fitness</div></div>
+      <div class="br-cell">Apr 01</div>
+      <div class="br-amount">$185.00</div>
+      <div class="br-status"><div class="bio-status bs-due"><div class="bio-dot bd-due"></div>Active</div></div>
+    </div>
+    <div class="bill-row status-paid">
+      <div class="br-info"><div class="br-name">Netflix</div><div class="br-cat">Streaming</div></div>
+      <div class="br-cell">Mar 15</div>
+      <div class="br-amount">$22.99</div>
+      <div class="br-status"><div class="bio-status bs-paid"><div class="bio-dot bd-paid"></div>Settled</div></div>
+    </div>
+    <div class="bill-row status-paid">
+      <div class="br-info"><div class="br-name">Spotify</div><div class="br-cat">Streaming</div></div>
+      <div class="br-cell">Mar 18</div>
+      <div class="br-amount">$11.99</div>
+      <div class="br-status"><div class="bio-status bs-paid"><div class="bio-dot bd-paid"></div>Settled</div></div>
+    </div>
+    <div class="bill-row status-paid">
+      <div class="br-info"><div class="br-name">Amazon Prime</div><div class="br-cat">Commerce</div></div>
+      <div class="br-cell">Mar 22</div>
+      <div class="br-amount">$14.99</div>
+      <div class="br-status"><div class="bio-status bs-paid"><div class="bio-dot bd-paid"></div>Settled</div></div>
+    </div>
+    <div class="bill-row status-paid">
+      <div class="br-info"><div class="br-name">GitHub Copilot</div><div class="br-cat">Development</div></div>
+      <div class="br-cell">Mar 20</div>
+      <div class="br-amount">$21.00</div>
+      <div class="br-status"><div class="bio-status bs-paid"><div class="bio-dot bd-paid"></div>Settled</div></div>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div class="r-block">
+      <div class="rb-label">Growth curve · 12 cycles</div>
+      <div class="rb-total">$571.45</div>
+      <div class="rb-delta">↑ +$23.17 cycle-on-cycle</div>
+      <div class="bio-chart">
+        <svg viewBox="0 0 260 64" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="bioGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0ADFB4" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="#0ADFB4" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Organic wave path — not perfectly straight lines -->
+          <path d="M0,52 C10,48 16,44 23,42 S36,38 43,38 S56,44 65,42 S80,33 87,34 S102,42 108,40 S122,28 130,29 S144,38 152,36 S166,24 173,25 S187,34 195,32 S210,20 217,21 S245,14 260,11"
+            fill="none" stroke="#0ADFB4" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M0,52 C10,48 16,44 23,42 S36,38 43,38 S56,44 65,42 S80,33 87,34 S102,42 108,40 S122,28 130,29 S144,38 152,36 S166,24 173,25 S187,34 195,32 S210,20 217,21 S245,14 260,11 L260,64 L0,64 Z"
+            fill="url(#bioGrad)"/>
+          <circle cx="260" cy="11" r="3" fill="#0ADFB4" opacity="0.8">
+            <animate attributeName="r" values="3;4.5;3" dur="2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.8;0.4;0.8" dur="2s" repeatCount="indefinite"/>
+          </circle>
+        </svg>
+        <div class="month-row">
+          <span class="ml">A</span><span class="ml">M</span><span class="ml">J</span><span class="ml">J</span><span class="ml">A</span><span class="ml">S</span><span class="ml">O</span><span class="ml">N</span><span class="ml">D</span><span class="ml">J</span><span class="ml">F</span><span class="ml now">M</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="r-block">
+      <div class="rb-label">Ecosystem breakdown</div>
+      <div class="contour-item">
+        <div class="ci-ring cir-teal"></div>
+        <div class="ci-name">Utilities</div>
+        <div class="ci-bar"><div class="ci-fill" style="width:100%;background:var(--teal);opacity:0.5"></div></div>
+        <div class="ci-val">$225.49</div>
+      </div>
+      <div class="contour-item">
+        <div class="ci-ring cir-amber"></div>
+        <div class="ci-name">Fitness</div>
+        <div class="ci-bar"><div class="ci-fill" style="width:82%;background:var(--amber);opacity:0.5"></div></div>
+        <div class="ci-val">$185.00</div>
+      </div>
+      <div class="contour-item">
+        <div class="ci-ring cir-coral"></div>
+        <div class="ci-name">Internet</div>
+        <div class="ci-bar"><div class="ci-fill" style="width:36%;background:var(--coral);opacity:0.5"></div></div>
+        <div class="ci-val">$79.99</div>
+      </div>
+      <div class="contour-item">
+        <div class="ci-ring cir-muted"></div>
+        <div class="ci-name">Other</div>
+        <div class="ci-bar"><div class="ci-fill" style="width:25%;background:rgba(255,255,255,0.2)"></div></div>
+        <div class="ci-val">$80.97</div>
+      </div>
+    </div>
+
+    <div class="r-block">
+      <div class="rb-label">Signals today</div>
+      <div class="log-entry">
+        <div class="le-dot" style="background:var(--teal);box-shadow:0 0 4px var(--teal-glow)"></div>
+        <div><div class="le-text"><strong>Spotify</strong> auto-resolved $11.99</div><div class="le-time">14:32</div></div>
+      </div>
+      <div class="log-entry">
+        <div class="le-dot" style="background:var(--coral);box-shadow:0 0 4px var(--coral-glow)"></div>
+        <div><div class="le-text"><strong>AT&T</strong> critical — payment failed</div><div class="le-time">11:15</div></div>
+      </div>
+      <div class="log-entry">
+        <div class="le-dot" style="background:var(--amber);box-shadow:0 0 4px var(--amber-glow)"></div>
+        <div><div class="le-text"><strong>PG&E</strong> new organism detected $145.50</div><div class="le-time">09:00</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="ft">Material Ecology · whatismybill.today · 2026</div>
+  <div class="ft">Grown, not made</div>
+</footer>
+
+</div>
+</body>
+</html>
