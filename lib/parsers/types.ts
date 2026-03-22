@@ -118,11 +118,87 @@ export interface PGEBill {
   flags: string[];
 }
 
+// ─── San Jose Water bill ──────────────────────────────────────────────────────
+
+export interface MonthlyAllocation {
+  month: string;   // "YYYY-MM"
+  days: number;
+  usage: number;   // allocated CCF
+  spend: number;   // allocated $ (from currentCharges, never totalAmountDue)
+}
+
+export interface SJWTier {
+  quantity: number;  // CCF in this tier
+  rate: number;      // $/CCF
+  amount: number;    // quantity × rate
+}
+
+/**
+ * Normalized San Jose Water Company bill.
+ * Single-utility (water only). Often bimonthly → monthlyAllocations spreads
+ * usage/spend across calendar months for dashboard time-series charts.
+ */
+export interface SJWBill {
+  provider: "San Jose Water";
+
+  accountNumber: string;
+  billDate: string;   // ISO YYYY-MM-DD
+  dueDate: string;    // ISO YYYY-MM-DD | "AUTO_PAY"
+
+  customerName: string;
+  serviceAddress: string;
+  rateCode: string;
+
+  periodStart: string;  // ISO YYYY-MM-DD
+  periodEnd: string;    // ISO YYYY-MM-DD
+  billingDays: number;
+
+  usageTotal: number;  // CCF
+  usageUnit: "CCF";
+
+  charges: {
+    serviceCharge: number;
+    tiers: SJWTier[];
+    lineItems: LineItem[];  // GRC, surcharges, taxes, etc.
+    total: number;          // "Current Charges" — use for analytics (monthlySpend)
+  };
+
+  previousBalance: number;
+  paymentsReceived: number;  // always ≤ 0  (CR amounts stored as negative)
+  totalAmountDue: number;    // 0 when "Auto Pay"
+
+  /**
+   * Use for analytics — never totalAmountDue.
+   * = charges.total (current period charges only, no carried balances)
+   */
+  monthlySpend: number;
+  effectiveUnitPrice: number;  // charges.total / usageTotal  ($/CCF)
+
+  /**
+   * Pro-rated allocations across each calendar month in the billing period.
+   * Water bills are often bimonthly; this allows dashboard to plot monthly data.
+   * Allocations are approximations based on days-in-month / total-days.
+   */
+  monthlyAllocations: MonthlyAllocation[];
+
+  flags: string[];
+}
+
+// ─── Union of all parsed bill types ──────────────────────────────────────────
+
+export type AnyBill = PGEBill | SJWBill;
+export type BillProviderType = "PGE" | "SJW";
+
 // ─── Parse result ─────────────────────────────────────────────────────────────
 
 export interface ParseBillResult {
   success: boolean;
-  bill?: PGEBill;
+  bill?: AnyBill;
+  /**
+   * Discriminator for the bill union type — use to narrow bill to PGEBill or SJWBill.
+   * "PGE" | "SJW" | undefined (undefined when success=false)
+   */
+  billType?: BillProviderType;
   error?: string;
   rawText?: string;
   /**

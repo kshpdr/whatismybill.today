@@ -13,7 +13,12 @@ import {
 import type { Bill } from "@/lib/types";
 import {
   deriveMonthlySpend, deriveElecMonthly, deriveGasMonthly,
+  utilitySummaryAnchorMonth, deriveApproxUtilitySpendInMonth,
 } from "@/lib/use-bills";
+import {
+  filterCompletedMonths,
+  isMonthComplete,
+} from "@/lib/bill-utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -214,11 +219,26 @@ export default function SharePage() {
   const elecMonthly  = deriveElecMonthly(allBills);
   const gasMonthly   = deriveGasMonthly(allBills);
 
-  const cur = monthlySpend[monthlySpend.length - 1] ?? { month: "", electricity: 0, gas: 0, water: 0, total: 0 };
-  const prv = monthlySpend[monthlySpend.length - 2] ?? { month: "", electricity: 0, gas: 0, water: 0, total: 0 };
-  const curTotal     = cur.electricity + cur.gas + cur.water;
-  const prvTotal     = prv.electricity + prv.gas + prv.water;
+  // Use anchor month logic + approx spend (not pro-rated calendar month for incomplete months)
+  const anchorYearMonth = utilitySummaryAnchorMonth(allBills);
+  const approxMonthSpend = anchorYearMonth 
+    ? deriveApproxUtilitySpendInMonth(allBills, anchorYearMonth.year, anchorYearMonth.month)
+    : { electricity: 0, gas: 0, water: 0 };
+  const curTotal = approxMonthSpend.electricity + approxMonthSpend.gas + approxMonthSpend.water;
+
+  // For delta: compare against the previous *completed* month's pro-rated total
+  const completedMonths = filterCompletedMonths(monthlySpend);
+  const prevMonth = completedMonths[completedMonths.length - 1];
+  const prvTotal = prevMonth ? (prevMonth.electricity + prevMonth.gas + prevMonth.water) : 0;
   const totalDeltaPct = prvTotal > 0 ? ((curTotal - prvTotal) / prvTotal) * 100 : 0;
+
+  // Current display label (the anchor month)
+  const curMonthLabel = anchorYearMonth 
+    ? `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][anchorYearMonth.month - 1]} '${String(anchorYearMonth.year).slice(2)}`
+    : "";
+  
+  // Check if anchor month is incomplete
+  const anchorIsIncomplete = anchorYearMonth ? !isMonthComplete(anchorYearMonth.year, anchorYearMonth.month) : false;
 
   const latestBill = [...allBills].sort(
     (a, b) => new Date(b.billingPeriodEnd).getTime() - new Date(a.billingPeriodEnd).getTime()
@@ -227,6 +247,17 @@ export default function SharePage() {
   const sortedBills = [...allBills].sort(
     (a, b) => new Date(b.billingPeriodEnd).getTime() - new Date(a.billingPeriodEnd).getTime()
   );
+
+  // Mark incomplete months for visual indication in chart
+  const monthlySpendWithMeta = monthlySpend.map(m => {
+    const [monthName, yearShort] = m.month.split(" '");
+    const year = 2000 + parseInt(yearShort);
+    const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(monthName) + 1;
+    return {
+      ...m,
+      isComplete: isMonthComplete(year, month),
+    };
+  });
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -257,7 +288,7 @@ export default function SharePage() {
             <div className="px-5 pt-4 pb-5">
               {latestBill && (
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-                  {fmtDate(latestBill.billingPeriodStart)} – {fmtDate(latestBill.billingPeriodEnd)} · Most recent bill
+                  {anchorIsIncomplete ? `${curMonthLabel} · Month in progress` : `${curMonthLabel} · Most recent complete data`}
                 </p>
               )}
               <div className="flex items-end justify-between mb-4">
@@ -266,7 +297,7 @@ export default function SharePage() {
                     {fmt$(curTotal)}
                   </p>
                   <div className="flex items-center gap-2 mt-2.5">
-                    {prv.month ? (
+                    {!anchorIsIncomplete && prevMonth ? (
                       <>
                         <span className={`flex items-center gap-0.5 text-sm font-bold px-2 py-0.5 rounded-full ${
                           totalDeltaPct < 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
@@ -274,8 +305,10 @@ export default function SharePage() {
                           {totalDeltaPct < 0 ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                           {Math.abs(totalDeltaPct).toFixed(1)}%
                         </span>
-                        <span className="text-sm text-slate-400">vs {prv.month}</span>
+                        <span className="text-sm text-slate-400">vs {prevMonth.month}</span>
                       </>
+                    ) : anchorIsIncomplete ? (
+                      <span className="text-sm text-slate-400">Approximate · bills still arriving</span>
                     ) : (
                       <span className="text-sm text-slate-400">First bill on record</span>
                     )}
@@ -285,9 +318,9 @@ export default function SharePage() {
               {/* Utility breakdown */}
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {[
-                  { label: "Electricity", amount: cur.electricity, color: C.electricity, icon: <Zap className="w-3.5 h-3.5" /> },
-                  { label: "Gas",         amount: cur.gas,         color: C.gas,         icon: <Flame className="w-3.5 h-3.5" /> },
-                  { label: "Water",       amount: cur.water,       color: C.water,       icon: <Droplets className="w-3.5 h-3.5" /> },
+                  { label: "Electricity", amount: approxMonthSpend.electricity, color: C.electricity, icon: <Zap className="w-3.5 h-3.5" /> },
+                  { label: "Gas",         amount: approxMonthSpend.gas,         color: C.gas,         icon: <Flame className="w-3.5 h-3.5" /> },
+                  { label: "Water",       amount: approxMonthSpend.water,       color: C.water,       icon: <Droplets className="w-3.5 h-3.5" /> },
                 ].map((u) => (
                   <div key={u.label} className="bg-slate-50 rounded-xl p-3">
                     <div className="flex items-center gap-1 mb-1" style={{ color: u.color }}>{u.icon}<span className="text-[10px] font-semibold">{u.label}</span></div>
@@ -307,15 +340,34 @@ export default function SharePage() {
             <ClientOnly height="h-48">
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlySpend} barSize={16} barCategoryGap="32%">
+                  <BarChart data={monthlySpendWithMeta} barSize={16} barCategoryGap="32%">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                     <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={34} />
                     <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, ""]}
                       contentStyle={{ border: "1px solid #E2E8F0", borderRadius: 12, fontSize: 12 }} />
-                    <Bar dataKey="electricity" name="Electricity" stackId="a" fill={C.electricity} radius={[0,0,0,0]} />
-                    <Bar dataKey="gas"         name="Gas"         stackId="a" fill={C.gas}         radius={[0,0,0,0]} />
-                    <Bar dataKey="water"       name="Water"       stackId="a" fill={C.water}       radius={[3,3,0,0]} />
+                    <Bar dataKey="electricity" name="Electricity" stackId="a" fill={C.electricity} radius={[0,0,0,0]}
+                      shape={(props: any) => {
+                        const { x, y, width, height, payload } = props;
+                        return <rect x={x} y={y} width={width} height={height} fill={C.electricity} opacity={payload.isComplete ? 1 : 0.4} />;
+                      }} />
+                    <Bar dataKey="gas" name="Gas" stackId="a" fill={C.gas} radius={[0,0,0,0]}
+                      shape={(props: any) => {
+                        const { x, y, width, height, payload } = props;
+                        return <rect x={x} y={y} width={width} height={height} fill={C.gas} opacity={payload.isComplete ? 1 : 0.4} />;
+                      }} />
+                    <Bar dataKey="water" name="Water" stackId="a" fill={C.water} radius={[3,3,0,0]}
+                      shape={(props: any) => {
+                        const { x, y, width, height, payload } = props;
+                        const r = 3;
+                        return (
+                          <path
+                            d={`M ${x},${y + r} Q ${x},${y} ${x + r},${y} L ${x + width - r},${y} Q ${x + width},${y} ${x + width},${y + r} L ${x + width},${y + height} L ${x},${y + height} Z`}
+                            fill={C.water}
+                            opacity={payload.isComplete ? 1 : 0.4}
+                          />
+                        );
+                      }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -1,20 +1,19 @@
-import { pgeToBills } from "./parsers/adapter.js";
-import type { PGEBill } from "./parsers/types.js";
+import { toBills } from "./parsers/adapter.js";
+import type { AnyBill, BillProviderType, ParseBillResult } from "./parsers/types.js";
 import type { NewBill } from "../db/schema.js";
 
 /**
- * Maps a parsed PGEBill to two NewBill rows ready for DB insertion.
- * Delegates charge categorisation to the adapter (pgeToBills),
- * then converts numeric fields to strings for Drizzle.
+ * Maps a parsed bill (any provider) to one or more NewBill rows for DB insertion.
+ * Delegates charge categorisation and field mapping to the adapter layer.
+ * Converts numeric fields to strings for Drizzle.
  */
-export function mapPGEBillToRows(
-  bill: PGEBill,
+export function mapBillToRows(
+  result: ParseBillResult,
   storageRef: string,
   householdId: string,
   uploadedBy: string,
-  ocrFallback = false
 ): NewBill[] {
-  const dtos = pgeToBills(bill, { householdId, storageRef, uploadedBy, ocrFallback });
+  const dtos = toBills(result, { householdId, storageRef, uploadedBy });
 
   return dtos
     .filter((dto) => dto.totalAmount > 0)
@@ -33,4 +32,22 @@ export function mapPGEBillToRows(
       uploadedBy:          dto.uploadedBy ?? null,
       parseStatus:         dto.parseStatus ?? "success",
     }));
+}
+
+/** @deprecated Use mapBillToRows with a full ParseBillResult instead */
+export function mapPGEBillToRows(
+  bill: AnyBill,
+  storageRef: string,
+  householdId: string,
+  uploadedBy: string,
+  ocrFallback = false
+): NewBill[] {
+  const billType: BillProviderType =
+    bill.provider === "PG&E" ? "PGE" : "SJW";
+  return mapBillToRows(
+    { success: true, bill, billType, ocrFallback },
+    storageRef,
+    householdId,
+    uploadedBy,
+  );
 }

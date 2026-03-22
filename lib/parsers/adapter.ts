@@ -1,16 +1,19 @@
 /**
- * Adapter: PGEBill → Bill[]
+ * Adapter layer: parsed bill types → Bill[] (app data model)
  *
- * One PG&E PDF contains both electricity and gas on the same statement.
- * The parser produces one PGEBill; the app's data model stores them as
- * two separate Bill records (utilityType "electricity" and "gas").
+ * Provider mappings:
+ *   PGEBill  →  [electricityBill, gasBill]  (one PDF → two Bills)
+ *   SJWBill  →  [waterBill]                 (one PDF → one Bill)
  *
- * This module is safe to import in client components — it has no Node.js
- * dependencies. The parser (index.ts) is server-only; the adapter is not.
+ * Adding a new provider:
+ *   1. Create myProviderToBill(s)() here
+ *   2. Add a case to toBills()
+ *
+ * This module is safe to import in client components — no Node.js deps.
  */
 
 import type { Bill } from "../types";
-import type { PGEBill } from "./types";
+import type { AnyBill, ParseBillResult, PGEBill, SJWBill } from "./types";
 
 // ─── External metadata ────────────────────────────────────────────────────────
 
@@ -169,4 +172,79 @@ export function pgeToBills(pge: PGEBill, meta: BillMeta): [Bill, Bill] {
     pgeToElectricityBill(pge, meta),
     pgeToGasBill(pge, meta),
   ];
+}
+
+// ─── SJW (San Jose Water) adapter ─────────────────────────────────────────────
+
+function waterCharges(sjw: SJWBill): Bill["charges"] {
+  const out: Bill["charges"] = [];
+
+  if (sjw.charges.serviceCharge > 0) {
+    out.push({ label: "Service Charge", amount: round2(sjw.charges.serviceCharge) });
+  }
+
+  const tierTotal = round2(sjw.charges.tiers.reduce((s, t) => s + t.amount, 0));
+  if (tierTotal > 0) {
+    out.push({ label: "Quantity Charges", amount: tierTotal });
+  }
+
+  let programs = 0, taxes = 0, other = 0;
+  for (const item of sjw.charges.lineItems) {
+    const l = item.label.toLowerCase();
+    if (l.includes("puc") || l.includes("surcharge") || l.includes("assist")) {
+      programs += item.amount;
+    } else if (l.includes("tax") || l.includes("franchise") || l.includes("fee")) {
+      taxes += item.amount;
+    } else {
+      other += item.amount;
+    }
+  }
+
+  if (programs > 0) out.push({ label: "Programs & Surcharges", amount: round2(programs) });
+  if (taxes    > 0) out.push({ label: "Taxes & Fees",          amount: round2(taxes) });
+  if (other    > 0) out.push({ label: "Other Adjustments",     amount: round2(other) });
+
+  return out.length > 0 ? out : [{ label: "Water Charges", amount: round2(sjw.charges.total) }];
+}
+
+export function sjwToBill(sjw: SJWBill, meta: BillMeta): Bill {
+  return {
+    id:                 `${meta.householdId}-water-${sjw.periodStart}`,
+    householdId:        meta.householdId,
+    provider:           sjw.provider,
+    utilityType:        "water",
+    billingPeriodStart: sjw.periodStart,
+    billingPeriodEnd:   sjw.periodEnd,
+    totalAmount:        round2(sjw.monthlySpend),
+    usage:              sjw.usageTotal,
+    usageUnit:          "CCF",
+    unitPrice:          round2(sjw.effectiveUnitPrice),
+    charges:            waterCharges(sjw),
+    storageRef:         meta.storageRef,
+    uploadedBy:         meta.uploadedBy,
+    parseStatus:        sjw.flags.some((f) => f.startsWith("missing_")) ? "failed" : "success",
+    uploadedAt:         meta.uploadedAt ?? new Date().toISOString(),
+  };
+}
+
+// ─── Unified entry point ──────────────────────────────────────────────────────
+
+/**
+ * Convert any successfully-parsed bill into one or more Bill records.
+ * Use this in route handlers after parseBillPDF() returns success.
+ *
+ * @example
+ *   const result = await parseBillPDF(buffer);
+ *   if (result.success && result.bill) {
+ *     const bills = toBills(result, { householdId, storageRef, uploadedBy });
+ *     // store bills in Firestore
+ *   }
+ */
+export function toBills(result: ParseBillResult, meta: BillMeta): Bill[] {
+  if (!result.success || !result.bill) return [];
+  const billMeta = { ...meta, ocrFallback: result.ocrFallback };
+  if (result.billType === "SJW") {
+    return [sjwToBill(result.bill as SJWBill, billMeta)];
+  }
+  return pgeToBills(result.bill as PGEBill, billMeta);
 }

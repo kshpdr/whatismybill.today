@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseBillPDF } from "@/lib/parsers";
-import { pgeToBills } from "@/lib/parsers/adapter";
+import { toBills } from "@/lib/parsers/adapter";
 
 export const runtime = "nodejs";
 
@@ -20,11 +20,7 @@ export async function POST(req: NextRequest) {
 
     // If parsing succeeded, also run the adapter so callers get ready-to-store Bills
     if (result.success && result.bill) {
-      const bills = pgeToBills(result.bill, {
-        householdId,
-        storageRef,
-        ocrFallback: result.ocrFallback,
-      });
+      const bills = toBills(result, { householdId, storageRef });
       return NextResponse.json({ ...result, bills });
     }
 

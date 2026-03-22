@@ -11,7 +11,7 @@ import {
   Zap, Flame, Droplets, FileText, LayoutDashboard, Upload,
   X, ChevronRight, ArrowUpRight, ArrowDownRight, TrendingUp,
   TrendingDown, Home as HomeIcon, Leaf, ChevronDown, Plus, Check,
-  LogOut, Settings, Trash2,
+  LogOut, Settings, Trash2, CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,7 +21,25 @@ import {
   MONTHLY_SPENDING, ELECTRICITY_MONTHLY, GAS_MONTHLY,
   WATER_MONTHLY, ALL_BILLS,
 } from "@/lib/mock-data";
-import { useBills, deriveMonthlySpend, deriveElecMonthly, deriveGasMonthly } from "@/lib/use-bills";
+import {
+  useBills,
+  deriveMonthlySpend,
+  deriveElecMonthly,
+  deriveGasMonthly,
+  utilitySummaryAnchorMonth,
+  deriveApproxUtilitySpendInMonth,
+} from "@/lib/use-bills";
+import {
+  pgeStatementCycles,
+  filterCompletedMonths,
+  getLatestBillOfType,
+  getPreviousBillOfType,
+  getBillingDays,
+  isWaterBimonthly,
+  getMonthlyEquivalent,
+  getMonthlyUsageEquivalent,
+  isMonthComplete,
+} from "@/lib/bill-utils";
 import { Bill } from "@/lib/types";
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
@@ -763,37 +781,131 @@ function DashboardPage() {
         .sort((a, b) => new Date(b.billingPeriodEnd).getTime() - new Date(a.billingPeriodEnd).getTime())[0]
     : undefined;
 
-  // Latest bill across all utilities — drives the "hero" period label
-  const latestBill = [...allBills].sort(
-    (a, b) => new Date(b.billingPeriodEnd).getTime() - new Date(a.billingPeriodEnd).getTime()
-  )[0];
+  // PG&E: group by statement end (electricity + gas = one energy bill)
+  const pgeCycles     = pgeStatementCycles(allBills);
+  const pgeCurrent    = pgeCycles[0];
+  const pgePrevious   = pgeCycles[1];
+  const pgeTotal      = pgeCurrent?.total ?? 0;
+  const pgePrevTotal  = pgePrevious?.total ?? 0;
+  const pgeDeltaPct   = pgePrevTotal > 0 ? ((pgeTotal - pgePrevTotal) / pgePrevTotal) * 100 : 0;
+  const pgeSavedAbs   = Math.abs(pgeTotal - pgePrevTotal);
+  const pgeElecBarPct = pgeTotal > 0 && pgeCurrent ? (pgeCurrent.elec / pgeTotal) * 100 : 0;
+  const pgeGasBarPct  = pgeTotal > 0 && pgeCurrent ? (pgeCurrent.gas / pgeTotal) * 100 : 0;
 
-  // Current + previous month (last two entries in derived data)
+  // Water: latest full bill vs previous water bill (same cadence — bimonthly or monthly)
+  const waterHeroSorted = [...allBills]
+    .filter((b) => b.utilityType === "water")
+    .sort((a, b) => b.billingPeriodEnd.localeCompare(a.billingPeriodEnd));
+  const waterHeroCurrent = waterHeroSorted[0];
+  const waterHeroPrev    = waterHeroSorted[1];
+  const waterHeroTotal   = waterHeroCurrent?.totalAmount ?? 0;
+  const waterHeroPrevTotal = waterHeroPrev?.totalAmount ?? 0;
+  const waterHeroDeltaPct =
+    waterHeroPrevTotal > 0 ? ((waterHeroTotal - waterHeroPrevTotal) / waterHeroPrevTotal) * 100 : 0;
+  const waterHeroSavedAbs = Math.abs(waterHeroTotal - waterHeroPrevTotal);
+  const waterHeroDays = waterHeroCurrent
+    ? Math.round(
+        (new Date(waterHeroCurrent.billingPeriodEnd + "T00:00:00").getTime() -
+          new Date(waterHeroCurrent.billingPeriodStart + "T00:00:00").getTime()) /
+          86_400_000
+      )
+    : 0;
+
+  // Approx. calendar-month utility total (anchored to latest water bill’s month, else latest PG&E)
+  const summaryAnchor = utilitySummaryAnchorMonth(allBills);
+  const approxMonthSpend = deriveApproxUtilitySpendInMonth(
+    allBills,
+    summaryAnchor.year,
+    summaryAnchor.month
+  );
+  const prevCalMonth =
+    summaryAnchor.month === 1
+      ? { year: summaryAnchor.year - 1, month: 12 }
+      : { year: summaryAnchor.year, month: summaryAnchor.month - 1 };
+  const approxPrevMonthSpend = deriveApproxUtilitySpendInMonth(
+    allBills,
+    prevCalMonth.year,
+    prevCalMonth.month
+  );
+  const approxMonthDeltaPct =
+    approxPrevMonthSpend.total > 0
+      ? ((approxMonthSpend.total - approxPrevMonthSpend.total) / approxPrevMonthSpend.total) * 100
+      : 0;
+  const approxMonthSavedAbs = Math.abs(approxMonthSpend.total - approxPrevMonthSpend.total);
+  const approxMonthLabel = new Date(
+    summaryAnchor.year,
+    summaryAnchor.month - 1,
+    1
+  ).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const prevApproxMonthLabel = new Date(
+    prevCalMonth.year,
+    prevCalMonth.month - 1,
+    1
+  ).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const approxTotal = approxMonthSpend.total;
+  const approxElecPct =
+    approxTotal > 0 ? (approxMonthSpend.electricity / approxTotal) * 100 : 0;
+  const approxGasPct =
+    approxTotal > 0 ? (approxMonthSpend.gas / approxTotal) * 100 : 0;
+  const approxWaterPct =
+    approxTotal > 0 ? (approxMonthSpend.water / approxTotal) * 100 : 0;
+
+  // ── Per-utility status: use latest bills (statement-level) ──────────────────
+  const latestElecBill = getLatestBillOfType(allBills, "electricity");
+  const latestGasBill = getLatestBillOfType(allBills, "gas");
+  const latestWaterBill = getLatestBillOfType(allBills, "water");
+  
+  const prevElecBill = getPreviousBillOfType(allBills, "electricity");
+  const prevGasBill = getPreviousBillOfType(allBills, "gas");
+  const prevWaterBill = getPreviousBillOfType(allBills, "water");
+
+  // Electricity: latest bill amount and usage
+  const elecAmount = latestElecBill?.totalAmount ?? 0;
+  const elecUsage = latestElecBill?.usage ?? 0;
+  const elecUsageLabel = latestElecBill ? `${elecUsage} kWh` : "—";
+  const elecDelta = latestElecBill && prevElecBill
+    ? ((latestElecBill.totalAmount - prevElecBill.totalAmount) / prevElecBill.totalAmount) * 100
+    : 0;
+
+  // Gas: latest bill amount and usage
+  const gasAmount = latestGasBill?.totalAmount ?? 0;
+  const gasUsage = latestGasBill?.usage ?? 0;
+  const gasUsageLabel = latestGasBill ? `${gasUsage} ${latestGasBill.usageUnit}` : "—";
+  const gasDelta = latestGasBill && prevGasBill
+    ? ((latestGasBill.totalAmount - prevGasBill.totalAmount) / prevGasBill.totalAmount) * 100
+    : 0;
+
+  // Water: monthly equivalent for bimonthly, else full amount
+  const waterIsBimonthly = latestWaterBill ? isWaterBimonthly(latestWaterBill) : false;
+  const waterAmount = latestWaterBill
+    ? (waterIsBimonthly ? getMonthlyEquivalent(latestWaterBill) : latestWaterBill.totalAmount)
+    : 0;
+  const waterUsage = latestWaterBill
+    ? (waterIsBimonthly ? getMonthlyUsageEquivalent(latestWaterBill) : latestWaterBill.usage)
+    : 0;
+  const waterUsageLabel = latestWaterBill
+    ? (waterIsBimonthly ? `~${waterUsage} CCF/mo` : `${latestWaterBill.usage} CCF`)
+    : "—";
+  const waterDelta = latestWaterBill && prevWaterBill
+    ? ((latestWaterBill.totalAmount - prevWaterBill.totalAmount) / prevWaterBill.totalAmount) * 100
+    : 0;
+  const waterProvider = latestWaterBill?.provider ?? "San Jose Water";
+
+  // Current + previous month (last two entries in derived data) — for charts only
   const cur = monthlySpend[monthlySpend.length - 1] ?? { month: "", electricity: 0, gas: 0, water: 0, total: 0 };
   const prv = monthlySpend[monthlySpend.length - 2] ?? { month: "", electricity: 0, gas: 0, water: 0, total: 0 };
-  const curTotal = cur.electricity + cur.gas + cur.water;
-  const prvTotal = prv.electricity + prv.gas + prv.water;
-  const totalDeltaPct = prvTotal > 0 ? ((curTotal - prvTotal) / prvTotal) * 100 : 0;
-  const savedAbs = Math.abs(curTotal - prvTotal);
 
   const curElec = elecMonthly[elecMonthly.length - 1] ?? { rate: 0, kWh: 0, total: 0 };
   const prvElec = elecMonthly[elecMonthly.length - 2] ?? { rate: 0, kWh: 0, total: 0 };
-  const elecDelta  = prv.electricity > 0 ? ((cur.electricity - prv.electricity) / prv.electricity) * 100 : 0;
-  const gasDelta   = prv.gas > 0         ? ((cur.gas - prv.gas) / prv.gas) * 100                         : 0;
-  const waterDelta = prv.water > 0       ? ((cur.water - prv.water) / prv.water) * 100                   : 0;
   const rateDelta  = prvElec.rate > 0    ? ((curElec.rate - prvElec.rate) / prvElec.rate) * 100           : 0;
-
-  // Proportion bar widths
-  const elecPct  = curTotal > 0 ? (cur.electricity / curTotal) * 100 : 0;
-  const gasPct   = curTotal > 0 ? (cur.gas / curTotal) * 100         : 0;
 
   // Insights — pick most notable
   const insights: { icon: React.ReactNode; color: string; headline: string; body: string }[] = [];
-  if (gasDelta < -8) {
+  if (gasDelta < -8 && latestGasBill && prevGasBill) {
     insights.push({
       icon: <Leaf className="w-4 h-4 text-emerald-600" />,
       color: "emerald",
-      headline: `Gas down ${Math.abs(gasDelta).toFixed(0)}% from February`,
+      headline: `Gas down ${Math.abs(gasDelta).toFixed(0)}% from last bill`,
       body: "Heating season winding down — expect it to keep falling through May.",
     });
   }
@@ -806,17 +918,23 @@ function DashboardPage() {
     });
   }
   if (insights.length === 0) {
-    insights.push({
-      icon: <TrendingDown className="w-4 h-4 text-emerald-600" />,
-      color: "emerald",
-      headline: `Bills ${Math.abs(totalDeltaPct).toFixed(1)}% lower than last month`,
-      body: "All three utilities came in under their February totals.",
-    });
+    if (pgePrevious) {
+      insights.push({
+        icon: pgeDeltaPct < 0 ? <TrendingDown className="w-4 h-4 text-emerald-600" /> : <TrendingUp className="w-4 h-4 text-amber-600" />,
+        color: pgeDeltaPct < 0 ? "emerald" : "amber",
+        headline: `PG&E (elec + gas) ${pgeDeltaPct < 0 ? "down" : "up"} ${Math.abs(pgeDeltaPct).toFixed(1)}% vs last statement`,
+        body: `Last energy statement was ${fmt$(pgePrevTotal)} · this one ${fmt$(pgeTotal)}.`,
+      });
+    } else {
+      insights.push({
+        icon: <TrendingDown className="w-4 h-4 text-emerald-600" />,
+        color: "emerald",
+        headline: "Add another PG&E bill to compare statements",
+        body: "Once you have two electricity+gas cycles, we’ll show period-over-period trends here.",
+      });
+    }
   }
   const insight = insights[0];
-
-  // Chart data
-  const ytdTotal = monthlySpend.reduce((s, m) => s + m.electricity + m.gas + m.water, 0);
 
   // ── Categorise a charge label into chart buckets ──────────────────────────
   function catElec(label: string): "Energy" | "Delivery" | "Programs" | "Tax" {
@@ -877,27 +995,38 @@ function DashboardPage() {
           return { month: mo, therms: b.usage, ...buckets };
         });
 
-  // ── Big-picture averages ──────────────────────────────────────────────────
-  const monthCount   = monthlySpend.length;
-  const avgMonthly   = monthCount > 0 ? ytdTotal / monthCount : 0;
-  const estAnnual    = avgMonthly * 12;
-  const avgElec      = monthCount > 0 ? monthlySpend.reduce((s, m) => s + m.electricity, 0) / monthCount : 0;
-  const avgGas       = monthCount > 0 ? monthlySpend.reduce((s, m) => s + m.gas, 0) / monthCount : 0;
-  const avgRate      = liveBills.filter(b => b.utilityType === "electricity" && b.unitPrice > 0)
-                         .reduce((s, b, _, a) => s + b.unitPrice / a.length, 0);
-  const CA_AVG_RATE  = 0.27; // CA average $/kWh as of 2024
-  const bestMonth    = [...monthlySpend].sort((a, b) => (a.electricity + a.gas + a.water) - (b.electricity + b.gas + b.water))[0];
-  const worstMonth   = [...monthlySpend].sort((a, b) => (b.electricity + b.gas + b.water) - (a.electricity + a.gas + a.water))[0];
+  // ── Big-picture averages (exclude incomplete current month) ──────────────────
+  const completedMonths = filterCompletedMonths(monthlySpend);
+  const monthCount = completedMonths.length;
+  const completedTotal = completedMonths.reduce((s, m) => s + m.electricity + m.gas + m.water, 0);
+  const avgMonthly = monthCount > 0 ? completedTotal / monthCount : 0;
+  const estAnnual = avgMonthly * 12;
+  const avgElec = monthCount > 0 ? completedMonths.reduce((s, m) => s + m.electricity, 0) / monthCount : 0;
+  const avgGas = monthCount > 0 ? completedMonths.reduce((s, m) => s + m.gas, 0) / monthCount : 0;
+  const avgWater = monthCount > 0 ? completedMonths.reduce((s, m) => s + m.water, 0) / monthCount : 0;
+  const avgRate = liveBills.filter(b => b.utilityType === "electricity" && b.unitPrice > 0)
+                    .reduce((s, b, _, a) => s + b.unitPrice / a.length, 0);
+  const CA_AVG_RATE = 0.27; // CA average $/kWh as of 2024
+  const bestMonth = [...completedMonths].sort((a, b) => (a.electricity + a.gas + a.water) - (b.electricity + b.gas + b.water))[0];
+  const worstMonth = [...completedMonths].sort((a, b) => (b.electricity + b.gas + b.water) - (a.electricity + a.gas + a.water))[0];
+
+  // Chart data (all months including current for visualization)
+  const ytdTotal = monthlySpend.reduce((s, m) => s + m.electricity + m.gas + m.water, 0);
+
+  // Mark incomplete months for visual indication
+  const monthlySpendWithMeta = monthlySpend.map(m => {
+    const [monthName, yearShort] = m.month.split(" '");
+    const year = 2000 + parseInt(yearShort);
+    const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(monthName) + 1;
+    return {
+      ...m,
+      isComplete: isMonthComplete(year, month),
+    };
+  });
 
   const filteredBills = utilityFilter === "all"
     ? allBills
     : allBills.filter((b) => b.utilityType === utilityFilter);
-
-  // Current month gas/water usage label
-  const latestGasBill   = [...allBills].filter(b => b.utilityType === "gas").sort((a,b) => b.billingPeriodEnd.localeCompare(a.billingPeriodEnd)).at(0);
-  const latestWaterBill = [...allBills].filter(b => b.utilityType === "water").sort((a,b) => b.billingPeriodEnd.localeCompare(a.billingPeriodEnd)).at(0);
-  const gasUsageLabel   = latestGasBill   ? `${latestGasBill.usage} ${latestGasBill.usageUnit}`     : "—";
-  const waterUsageLabel = latestWaterBill ? `${latestWaterBill.usage} ${latestWaterBill.usageUnit}` : "—";
 
   // Guard — all hooks above, conditional returns below
   if (!isDemo && (authLoading || !activeHousehold)) {
@@ -1097,87 +1226,250 @@ function DashboardPage() {
               {/* ── DASHBOARD CONTENT (only shown when there&apos;s data) ── */}
               {(hasData || isDemo) && !billsLoading && (<>
 
-              {/* ── 1. HERO ── */}
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                {/* amber accent bar */}
-                <div className="h-1 w-full bg-linear-to-r from-amber-400 via-amber-300 to-cyan-300" />
-
+              {/* ── 0. CALENDAR MONTH APPROX (water-anchored) ── */}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="h-1 w-full bg-linear-to-r from-amber-400 via-blue-400 to-cyan-400" />
                 <div className="px-5 pt-4 pb-5">
-                  {/* period label */}
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-                    {isDemo
-                      ? "March 2026 · Current billing cycle"
-                      : latestBill
-                        ? `${fmtDate(latestBill.billingPeriodStart)} – ${fmtDate(latestBill.billingPeriodEnd)} · Most recent bill`
-                        : cur.month}
-                  </p>
-
-                  {/* big total + delta */}
-                  <div className="flex items-end justify-between mb-5">
-                    <div>
-                      <p className="text-5xl font-bold text-slate-900 tracking-tight tabular-nums leading-none">
-                        {fmt$(curTotal)}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <CalendarDays className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        Approx. utilities · calendar month
                       </p>
-                      <div className="flex items-center gap-2 mt-2.5">
-                        {prv.month ? (
-                          <>
-                            <span className={`flex items-center gap-0.5 text-sm font-bold px-2 py-0.5 rounded-full ${
-                              totalDeltaPct < 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
-                            }`}>
-                              {totalDeltaPct < 0 ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
-                              {Math.abs(totalDeltaPct).toFixed(1)}%
-                            </span>
-                            <span className="text-sm text-slate-400">vs {prv.month}</span>
-                          </>
-                        ) : (
-                          <span className="text-sm text-slate-400">First bill — upload more to compare</span>
+                      <p className="text-lg font-semibold text-slate-900 leading-tight mt-0.5">
+                        {approxMonthLabel}
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        {summaryAnchor.source === "water" && (
+                          <>Month is tied to your <span className="font-semibold text-cyan-700">latest water</span> bill (period end). Elec, gas &amp; water are pro‑rated by billing days in this month.</>
                         )}
-                      </div>
-                    </div>
-                    {prv.month && (
-                    <div className="text-right pb-0.5">
-                      <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
-                        {totalDeltaPct < 0 ? "saved" : "extra"}
-                      </p>
-                      <p className={`text-2xl font-bold tabular-nums ${totalDeltaPct < 0 ? "text-emerald-600" : "text-red-500"}`}>
-                        {fmtRound$((savedAbs))}
+                        {summaryAnchor.source === "energy" && (
+                          <>No water bill yet — using your latest <span className="font-semibold text-amber-700">PG&amp;E</span> bill month. Add a water bill to anchor on water instead.</>
+                        )}
+                        {summaryAnchor.source === "today" && (
+                          <>Upload bills to anchor this summary on real statement dates.</>
+                        )}
                       </p>
                     </div>
-                    )}
                   </div>
 
-                  {/* proportion bar */}
-                  <div>
-                    <div className="flex h-3 rounded-full overflow-hidden gap-px bg-slate-100">
-                      <div className="h-full bg-amber-400" style={{ width: `${elecPct}%` }} />
-                      <div className="h-full bg-blue-400" style={{ width: `${gasPct}%` }} />
-                      <div className="h-full bg-cyan-400 flex-1" />
+                  {approxTotal > 0 ? (
+                    <>
+                      <div className="flex items-end justify-between mb-4">
+                        <div>
+                          <p className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight tabular-nums leading-none">
+                            ~{fmt$(approxTotal)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                            {approxPrevMonthSpend.total > 0 ? (
+                              <>
+                                <span className={`flex items-center gap-0.5 text-sm font-bold px-2 py-0.5 rounded-full ${
+                                  approxMonthDeltaPct < 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                                }`}>
+                                  {approxMonthDeltaPct < 0 ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+                                  {Math.abs(approxMonthDeltaPct).toFixed(1)}%
+                                </span>
+                                <span className="text-sm text-slate-400">vs {prevApproxMonthLabel}</span>
+                              </>
+                            ) : (
+                              <span className="text-sm text-slate-400">No prior month data to compare</span>
+                            )}
+                          </div>
+                        </div>
+                        {approxPrevMonthSpend.total > 0 && (
+                          <div className="text-right pb-0.5 shrink-0">
+                            <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
+                              {approxMonthDeltaPct < 0 ? "saved" : "extra"}
+                            </p>
+                            <p className={`text-xl font-bold tabular-nums ${approxMonthDeltaPct < 0 ? "text-emerald-600" : "text-red-500"}`}>
+                              {fmtRound$(approxMonthSavedAbs)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="flex h-2.5 rounded-full overflow-hidden gap-px bg-slate-100">
+                          <div className="h-full bg-amber-400" style={{ width: `${approxElecPct}%` }} />
+                          <div className="h-full bg-blue-400" style={{ width: `${approxGasPct}%` }} />
+                          <div className="h-full bg-cyan-400" style={{ width: `${approxWaterPct}%` }} />
+                        </div>
+                        <div className="flex mt-2 text-[11px] gap-3 flex-wrap">
+                          <span className="text-amber-700 font-semibold tabular-nums">
+                            Elec {fmtRound$(approxMonthSpend.electricity)}
+                          </span>
+                          <span className="text-blue-700 font-semibold tabular-nums">
+                            Gas {fmtRound$(approxMonthSpend.gas)}
+                          </span>
+                          <span className="text-cyan-700 font-semibold tabular-nums">
+                            Water {fmtRound$(approxMonthSpend.water)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-500 py-2">
+                      No billing days fall in {approxMonthLabel} yet — statements may cover other months.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ── 1. HERO — PG&E energy statement (electricity + gas) ── */}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="h-1 w-full bg-linear-to-r from-amber-400 to-blue-400" />
+                <div className="px-5 pt-4 pb-5">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+                    PG&E · Electricity &amp; gas
+                  </p>
+                  <p className="text-xs text-slate-500 mb-3">
+                    {pgeCurrent
+                      ? `${fmtDate(pgeCurrent.periodStart)} – ${fmtDate(pgeCurrent.periodEnd)} · Latest energy statement`
+                      : isDemo
+                        ? "March 2026 · Latest energy statement"
+                        : "No PG&E bills yet"}
+                  </p>
+
+                  {pgeCurrent && pgeTotal > 0 ? (
+                    <>
+                      <div className="flex items-end justify-between mb-5">
+                        <div>
+                          <p className="text-5xl font-bold text-slate-900 tracking-tight tabular-nums leading-none">
+                            {fmt$(pgeTotal)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                            {pgePrevious ? (
+                              <>
+                                <span className={`flex items-center gap-0.5 text-sm font-bold px-2 py-0.5 rounded-full ${
+                                  pgeDeltaPct < 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                                }`}>
+                                  {pgeDeltaPct < 0 ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+                                  {Math.abs(pgeDeltaPct).toFixed(1)}%
+                                </span>
+                                <span className="text-sm text-slate-400">vs previous statement</span>
+                              </>
+                            ) : (
+                              <span className="text-sm text-slate-400">Upload another PG&amp;E bill to compare statements</span>
+                            )}
+                          </div>
+                        </div>
+                        {pgePrevious && (
+                          <div className="text-right pb-0.5 shrink-0">
+                            <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
+                              {pgeDeltaPct < 0 ? "saved" : "extra"}
+                            </p>
+                            <p className={`text-2xl font-bold tabular-nums ${pgeDeltaPct < 0 ? "text-emerald-600" : "text-red-500"}`}>
+                              {fmtRound$(pgeSavedAbs)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-slate-400 mb-2">
+                        {pgeCurrent.kWh > 0 && <span className="mr-3">{pgeCurrent.kWh.toLocaleString()} kWh</span>}
+                        {pgeCurrent.therms > 0 && <span>{pgeCurrent.therms} therms</span>}
+                      </p>
+
+                      <div>
+                        <div className="flex h-3 rounded-full overflow-hidden gap-px bg-slate-100">
+                          <div className="h-full bg-amber-400" style={{ width: `${pgeElecBarPct}%` }} />
+                          <div className="h-full bg-blue-400" style={{ width: `${pgeGasBarPct}%` }} />
+                        </div>
+                        <div className="flex mt-2.5 text-[11px]">
+                          <div style={{ width: `${pgeElecBarPct}%` }} className="min-w-0">
+                            <p className="font-bold text-amber-600 truncate">Electricity</p>
+                            <p className="text-slate-400 tabular-nums">{fmtRound$(pgeCurrent.elec)}</p>
+                          </div>
+                          <div className="flex-1 min-w-0 pl-1">
+                            <p className="font-bold text-blue-600 truncate">Gas</p>
+                            <p className="text-slate-400 tabular-nums">{fmtRound$(pgeCurrent.gas)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-500 py-2">
+                      Upload a PG&amp;E PDF — we&apos;ll split it into electricity and gas for this summary.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* ── 1b. HERO — Water (most recent bill, vs prior water bill) ── */}
+              {waterHeroCurrent && (
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                  <div className="h-1 w-full bg-linear-to-r from-cyan-400 to-teal-400" />
+                  <div className="px-5 pt-4 pb-5">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+                      Water · Full bill
+                    </p>
+                    <p className="text-xs text-slate-500 mb-3">
+                      {fmtDate(waterHeroCurrent.billingPeriodStart)} – {fmtDate(waterHeroCurrent.billingPeriodEnd)}
+                      {waterHeroDays > 0 && (
+                        <span className="text-slate-400"> · {waterHeroDays} days</span>
+                      )}
+                      {waterHeroDays > 40 && (
+                        <span className="ml-1 text-cyan-600 font-semibold">· bimonthly</span>
+                      )}
+                    </p>
+
+                    <div className="flex items-end justify-between mb-4">
+                      <div>
+                        <p className="text-5xl font-bold text-slate-900 tracking-tight tabular-nums leading-none">
+                          {fmt$(waterHeroTotal)}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                          {waterHeroPrev ? (
+                            <>
+                              <span className={`flex items-center gap-0.5 text-sm font-bold px-2 py-0.5 rounded-full ${
+                                waterHeroDeltaPct < 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                              }`}>
+                                {waterHeroDeltaPct < 0 ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+                                {Math.abs(waterHeroDeltaPct).toFixed(1)}%
+                              </span>
+                              <span className="text-sm text-slate-400">vs previous water bill</span>
+                            </>
+                          ) : (
+                            <span className="text-sm text-slate-400">First water bill on file</span>
+                          )}
+                        </div>
+                      </div>
+                      {waterHeroPrev && (
+                        <div className="text-right pb-0.5 shrink-0">
+                          <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
+                            {waterHeroDeltaPct < 0 ? "saved" : "extra"}
+                          </p>
+                          <p className={`text-2xl font-bold tabular-nums ${waterHeroDeltaPct < 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {fmtRound$(waterHeroSavedAbs)}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex mt-2.5 text-[11px]">
-                      <div style={{ width: `${elecPct}%` }} className="min-w-0">
-                        <p className="font-bold text-amber-600 truncate">Electricity</p>
-                        <p className="text-slate-400 tabular-nums">{fmtRound$(cur.electricity)}</p>
-                      </div>
-                      <div style={{ width: `${gasPct}%` }} className="min-w-0 px-1">
-                        <p className="font-bold text-blue-600 truncate">Gas</p>
-                        <p className="text-slate-400 tabular-nums">{fmtRound$(cur.gas)}</p>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-cyan-600 truncate">Water</p>
-                        <p className="text-slate-400 tabular-nums">{fmtRound$(cur.water)}</p>
-                      </div>
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                      <span className="font-medium tabular-nums">
+                        {waterHeroCurrent.usage} {waterHeroCurrent.usageUnit}
+                      </span>
+                      <span className="text-slate-400">
+                        {waterHeroCurrent.unitPrice > 0 && (
+                          <>${waterHeroCurrent.unitPrice.toFixed(2)}/{waterHeroCurrent.usageUnit}</>
+                        )}
+                      </span>
+                      <span className="text-slate-400">{waterHeroCurrent.provider}</span>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* ── 2. PER-UTILITY STATUS ── */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 {([
-                  { type: "electricity", icon: <Zap className="w-4 h-4 text-amber-600" />,      bg: "#FEF3C7", label: "Electricity", amount: cur.electricity, usage: `${curElec.kWh} kWh`,     rawUsage: curElec.kWh,              rawUnit: "kWh",    provider: "PG&E",         delta: elecDelta },
-                  { type: "gas",         icon: <Flame className="w-4 h-4 text-blue-600" />,    bg: "#DBEAFE", label: "Gas",         amount: cur.gas,         usage: gasUsageLabel,           rawUsage: latestGasBill?.usage ?? 0,   rawUnit: "Therms", provider: "PG&E",         delta: gasDelta },
-                  { type: "water",       icon: <Droplets className="w-4 h-4 text-cyan-600" />, bg: "#CFFAFE", label: "Water",       amount: cur.water,       usage: waterUsageLabel,         rawUsage: latestWaterBill?.usage ?? 0, rawUnit: latestWaterBill?.usageUnit ?? "CCF", provider: "East Bay MUD", delta: waterDelta },
-                ] as { type: UtilityFilter; icon: React.ReactNode; bg: string; label: string; amount: number; usage: string; rawUsage: number; rawUnit: string; provider: string; delta: number }[]).map((item, i, arr) => {
+                  { type: "electricity", icon: <Zap className="w-4 h-4 text-amber-600" />,      bg: "#FEF3C7", label: "Electricity", amount: elecAmount, usage: elecUsageLabel,     rawUsage: elecUsage,              rawUnit: "kWh",    provider: "PG&E",          delta: elecDelta, estLabel: null },
+                  { type: "gas",         icon: <Flame className="w-4 h-4 text-blue-600" />,    bg: "#DBEAFE", label: "Gas",         amount: gasAmount,         usage: gasUsageLabel,           rawUsage: gasUsage,   rawUnit: "Therms", provider: "PG&E",          delta: gasDelta,  estLabel: null },
+                  { type: "water",       icon: <Droplets className="w-4 h-4 text-cyan-600" />, bg: "#CFFAFE", label: "Water",       amount: waterAmount, usage: waterUsageLabel,      rawUsage: waterUsage,             rawUnit: "CCF",    provider: waterProvider,   delta: waterDelta, estLabel: waterIsBimonthly ? "bimonthly" : null },
+                ] as { type: UtilityFilter; icon: React.ReactNode; bg: string; label: string; amount: number; usage: string; rawUsage: number; rawUnit: string; provider: string; delta: number; estLabel: string | null }[]).map((item, i, arr) => {
                   const equivs = usageEquivalents(item.rawUsage, item.rawUnit);
                   return (
                   <button
@@ -1200,8 +1492,15 @@ function DashboardPage() {
                       )}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-slate-900 tabular-nums">{fmt$(item.amount)}</p>
-                      <Delta pct={item.delta} size="xs" />
+                      <p className="text-sm font-bold text-slate-900 tabular-nums">
+                        {item.estLabel ? "~" : ""}{fmt$(item.amount)}{item.estLabel ? <span className="text-[10px] font-normal text-slate-400">/mo</span> : null}
+                      </p>
+                      {item.estLabel && (
+                        <span className="text-[9px] font-semibold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded-full">
+                          {item.estLabel}
+                        </span>
+                      )}
+                      {!item.estLabel && item.delta !== 0 && <Delta pct={item.delta} size="xs" />}
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-200 shrink-0" />
                   </button>
@@ -1255,8 +1554,9 @@ function DashboardPage() {
                   {/* Per-utility averages */}
                   <div className="px-5 py-3 flex gap-3">
                     {[
-                      { label: "Elec avg",  value: avgElec, color: C.electricity, show: avgElec > 0 },
-                      { label: "Gas avg",   value: avgGas,  color: C.gas,         show: avgGas  > 0 },
+                      { label: "Elec avg",  value: avgElec,  color: C.electricity, show: avgElec  > 0 },
+                      { label: "Gas avg",   value: avgGas,   color: C.gas,         show: avgGas   > 0 },
+                      { label: "Water avg", value: avgWater, color: C.water,       show: avgWater > 0 },
                     ].filter(x => x.show).map(x => (
                       <div key={x.label} className="flex-1 bg-slate-50 rounded-xl px-3 py-2.5">
                         <p className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: x.color }}>{x.label}</p>
@@ -1344,15 +1644,34 @@ function DashboardPage() {
                 <ClientOnly height="h-52">
                   <div className="h-52">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlySpend} barSize={16} barCategoryGap="32%">
+                      <BarChart data={monthlySpendWithMeta} barSize={16} barCategoryGap="32%">
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                         <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} interval={1} />
                         <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={34} />
                         <Tooltip content={<ChartTooltip dollar />} cursor={{ fill: "#F8FAFC", radius: 4 }} />
                         <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 11, color: "#64748B", paddingTop: 12 }} />
-                        <Bar dataKey="electricity" name="Electricity" stackId="a" fill={C.electricity} radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="gas"         name="Gas"         stackId="a" fill={C.gas}         radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="water"       name="Water"       stackId="a" fill={C.water}       radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="electricity" name="Electricity" stackId="a" fill={C.electricity} radius={[0, 0, 0, 0]} fillOpacity={1}
+                          shape={(props: any) => {
+                            const { x, y, width, height, payload } = props;
+                            return <rect x={x} y={y} width={width} height={height} fill={C.electricity} opacity={payload.isComplete ? 1 : 0.4} />;
+                          }} />
+                        <Bar dataKey="gas" name="Gas" stackId="a" fill={C.gas} radius={[0, 0, 0, 0]} fillOpacity={1}
+                          shape={(props: any) => {
+                            const { x, y, width, height, payload } = props;
+                            return <rect x={x} y={y} width={width} height={height} fill={C.gas} opacity={payload.isComplete ? 1 : 0.4} />;
+                          }} />
+                        <Bar dataKey="water" name="Water" stackId="a" fill={C.water} radius={[3, 3, 0, 0]} fillOpacity={1}
+                          shape={(props: any) => {
+                            const { x, y, width, height, payload } = props;
+                            const r = 3;
+                            return (
+                              <path
+                                d={`M ${x},${y + r} Q ${x},${y} ${x + r},${y} L ${x + width - r},${y} Q ${x + width},${y} ${x + width},${y + r} L ${x + width},${y + height} L ${x},${y + height} Z`}
+                                fill={C.water}
+                                opacity={payload.isComplete ? 1 : 0.4}
+                              />
+                            );
+                          }} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

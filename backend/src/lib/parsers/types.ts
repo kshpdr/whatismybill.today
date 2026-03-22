@@ -118,24 +118,71 @@ export interface PGEBill {
   flags: string[];
 }
 
+// ─── San Jose Water bill ──────────────────────────────────────────────────────
+
+export interface MonthlyAllocation {
+  month: string;   // "YYYY-MM"
+  days: number;
+  usage: number;   // allocated CCF
+  spend: number;   // allocated $ (from currentCharges, never totalAmountDue)
+}
+
+export interface SJWTier {
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
+export interface SJWBill {
+  provider: "San Jose Water";
+
+  accountNumber: string;
+  billDate: string;   // ISO YYYY-MM-DD
+  dueDate: string;    // ISO YYYY-MM-DD | "AUTO_PAY"
+
+  customerName: string;
+  serviceAddress: string;
+  rateCode: string;
+
+  periodStart: string;
+  periodEnd: string;
+  billingDays: number;
+
+  usageTotal: number;
+  usageUnit: "CCF";
+
+  charges: {
+    serviceCharge: number;
+    tiers: SJWTier[];
+    lineItems: LineItem[];
+    total: number;
+  };
+
+  previousBalance: number;
+  paymentsReceived: number;
+  totalAmountDue: number;
+
+  monthlySpend: number;
+  effectiveUnitPrice: number;
+  monthlyAllocations: MonthlyAllocation[];
+
+  flags: string[];
+}
+
+// ─── Union of all parsed bill types ──────────────────────────────────────────
+
+export type AnyBill = PGEBill | SJWBill;
+export type BillProviderType = "PGE" | "SJW";
+
 // ─── Parse result ─────────────────────────────────────────────────────────────
 
 export interface ParseBillResult {
   success: boolean;
-  bill?: PGEBill;
+  bill?: AnyBill;
+  billType?: BillProviderType;
   error?: string;
   rawText?: string;
-  /**
-   * True when the PDF has an undecodable private font encoding (CrawfordTech
-   * archive reprints). The bill rendered visually but text cannot be extracted.
-   * Show the manual entry form to the user in this case.
-   */
   encodingError?: boolean;
-  /**
-   * True when the primary pdf-parse extraction failed and the result was
-   * obtained by rendering the PDF to images and running Tesseract OCR.
-   * Quality may be slightly lower; watch for missing_* flags in bill.flags.
-   */
   ocrFallback?: boolean;
 }
 

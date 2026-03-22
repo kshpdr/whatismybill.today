@@ -1,53 +1,77 @@
 /**
- * PDF bill parser entry point.
- * Server-side only — uses pdf-parse (Node.js), never import in client components.
+ * PDF bill parser — entry point.
+ * Server-side only (Node.js). Never import in client components.
  *
- * Parse flow:
- *   1. pdf-parse extracts text from the PDF's text layer
- *   2. If text looks garbled → OCR fallback (pdftoppm + tesseract)
- *   3. If OCR also fails    → encodingError, show manual entry form
+ * ── Parse flow ───────────────────────────────────────────────────────────────
+ *  1. pdf-parse extracts text from the PDF's text layer
+ *  2. If garbled → OCR fallback (pdftoppm + tesseract)
+ *  3. Walk the PARSER_REGISTRY to find a matching provider → parse
+ *  4. If no provider matched → encodingError (show manual entry form)
  *
- * Manual entry flow (after user fills the form):
- *   const bill = manualEntryToPGEBill(formData);
- *   → store bill same as a parsed one
+ * ── Adding a new provider ────────────────────────────────────────────────────
+ *  1. Create lib/parsers/myprovider.ts  exporting isMyproviderBill() + parseMyproviderText()
+ *  2. Add MyProviderBill to lib/parsers/types.ts and the AnyBill union
+ *  3. Push one entry to PARSER_REGISTRY below
+ *  4. Add an adapter in lib/parsers/adapter.ts
  */
 
-import { extractBillingHistory, isPGEBill, parsePGEText } from "./pge";
+import { isPGEBill, parsePGEText } from "./pge";
+import { isSJWBill, parseSJWText } from "./sjw";
 import { manualEntryToPGEBill } from "./manual";
-import type { ManualBillEntry, ParseBillResult } from "./types";
+import type {
+  AnyBill,
+  BillProviderType,
+  ManualBillEntry,
+  ParseBillResult,
+} from "./types";
 
-// ─── PDF text extraction ───────────────────────────────────────────────────────
+// ─── Plugin registry ──────────────────────────────────────────────────────────
 
-async function extractText(buffer: Buffer): Promise<string> {
-  // Dynamic import keeps pdf-parse out of the static bundle (Turbopack compat).
-  // v1 API: default export is a function, returns { text, ... }
-  const pdfParse = (await import("pdf-parse")).default;
-  const result = await pdfParse(buffer);
-  return result.text ?? "";
+interface ParserPlugin {
+  type:   BillProviderType;
+  detect: (text: string) => boolean;
+  parse:  (text: string) => AnyBill;
 }
 
 /**
- * Detect garbled private-font encoding (CrawfordTech archive reprints).
- * These PDFs render correctly on screen but text cannot be decoded by any tool.
- * Heuristic: less than 25% of characters are ASCII letters → garbled.
+ * Ordered list of provider parsers.
+ * The first one whose detect() returns true wins.
  */
+const PARSER_REGISTRY: ParserPlugin[] = [
+  { type: "PGE", detect: isPGEBill,  parse: parsePGEText  },
+  { type: "SJW", detect: isSJWBill,  parse: parseSJWText  },
+];
+
+// ─── Text extraction ──────────────────────────────────────────────────────────
+
+async function extractText(buffer: Buffer): Promise<string> {
+  // Dynamic import keeps pdf-parse out of the static bundle (Turbopack compat).
+  const pdfParse = (await import("pdf-parse")).default;
+  const result   = await pdfParse(buffer);
+  return result.text ?? "";
+}
+
 function isGarbledEncoding(text: string): boolean {
-  const sample = text.slice(0, 500).replace(/\s/g, "");
+  const sample  = text.slice(0, 500).replace(/\s/g, "");
   if (sample.length < 20) return false;
   const letters = (sample.match(/[a-zA-Z]/g) ?? []).length;
   return letters / sample.length < 0.25;
 }
 
-// ─── Primary parse path ────────────────────────────────────────────────────────
+// ─── Core dispatcher ──────────────────────────────────────────────────────────
 
-/**
- * Parse a utility bill PDF into a structured PGEBill.
- *
- * Returns:
- *   { success: true,  bill }           — parsed successfully
- *   { success: false, encodingError }  — garbled PDF, show manual entry form
- *   { success: false, error }          — unrecoverable error
- */
+function dispatchParser(text: string): { plugin: ParserPlugin; bill: AnyBill } | null {
+  for (const plugin of PARSER_REGISTRY) {
+    if (plugin.detect(text)) {
+      const bill = plugin.parse(text);
+      return { plugin, bill };
+    }
+  }
+  return null;
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
 export async function parseBillPDF(buffer: Buffer): Promise<ParseBillResult> {
   let rawText: string;
 
@@ -68,9 +92,8 @@ export async function parseBillPDF(buffer: Buffer): Promise<ParseBillResult> {
     };
   }
 
+  // Garbled encoding → try OCR before giving up
   if (isGarbledEncoding(rawText)) {
-    // Primary extraction is garbled — try rendering to images and OCR-ing instead.
-    // Dynamic import keeps child_process/fs out of the static bundle (Turbopack).
     let ocrText: string;
     try {
       const { extractTextViaOCR } = await import("./ocr");
@@ -87,26 +110,32 @@ export async function parseBillPDF(buffer: Buffer): Promise<ParseBillResult> {
       };
     }
 
-    if (!isPGEBill(ocrText)) {
+    const ocrResult = dispatchParser(ocrText);
+    if (!ocrResult) {
       return {
         success: false,
         encodingError: true,
         error:
-          "OCR succeeded but could not identify this as a PG&E bill. " +
+          "OCR succeeded but could not identify a supported bill provider. " +
           "Please enter the bill details manually.",
         rawText: ocrText,
       };
     }
 
     try {
-      const bill = parsePGEText(ocrText);
-      return { success: true, bill, rawText: ocrText, ocrFallback: true };
+      return {
+        success:     true,
+        bill:        ocrResult.bill,
+        billType:    ocrResult.plugin.type,
+        rawText:     ocrText,
+        ocrFallback: true,
+      };
     } catch (err) {
       return {
         success: false,
         encodingError: true,
         error:
-          "OCR succeeded but PG&E parsing failed: " +
+          "OCR succeeded but parsing failed: " +
           (err instanceof Error ? err.message : String(err)) +
           ". Please enter the bill details manually.",
         rawText: ocrText,
@@ -114,39 +143,47 @@ export async function parseBillPDF(buffer: Buffer): Promise<ParseBillResult> {
     }
   }
 
-  if (isPGEBill(rawText)) {
-    try {
-      const bill = parsePGEText(rawText);
-      return { success: true, bill, rawText };
-    } catch (err) {
-      return {
-        success: false,
-        error: `PG&E parsing failed: ${err instanceof Error ? err.message : String(err)}`,
-        rawText,
-      };
-    }
+  // Normal path: dispatch to the right provider
+  const matched = dispatchParser(rawText);
+  if (!matched) {
+    return {
+      success: false,
+      error:
+        `Unrecognized bill provider. Supported: ${PARSER_REGISTRY.map((p) => p.type).join(", ")}.`,
+      rawText,
+    };
   }
 
-  return {
-    success: false,
-    error: "Unrecognized bill provider — only PG&E is supported.",
-    rawText,
-  };
+  try {
+    return {
+      success:  true,
+      bill:     matched.bill,
+      billType: matched.plugin.type,
+      rawText,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: `${matched.plugin.type} parsing failed: ${err instanceof Error ? err.message : String(err)}`,
+      rawText,
+    };
+  }
 }
 
-// ─── Manual entry path ─────────────────────────────────────────────────────────
+// ─── Re-exports ───────────────────────────────────────────────────────────────
 
 export { manualEntryToPGEBill } from "./manual";
 export type { ManualBillEntry };
 
-// ─── Re-exports ────────────────────────────────────────────────────────────────
-
 export type {
+  AnyBill,
+  BillProviderType,
   BillingHistoryEntry,
   GasSegment,
   LineItem,
+  MonthlyAllocation,
   ParseBillResult,
   PGEBill,
+  SJWBill,
+  SJWTier,
 } from "./types";
-
-export { extractBillingHistory } from "./pge";

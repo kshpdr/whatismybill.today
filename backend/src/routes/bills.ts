@@ -4,7 +4,7 @@ import { db } from "../db/index.js";
 import { bills, householdMembers } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
 import { parseBillPDF } from "../lib/parsers/index.js";
-import { mapPGEBillToRows } from "../lib/map-to-bill.js";
+import { mapBillToRows } from "../lib/map-to-bill.js";
 import { saveFile, getFile, deleteFile } from "../lib/storage.js";
 import { randomUUID } from "crypto";
 
@@ -111,12 +111,11 @@ router.post("/upload", async (c) => {
     return c.json({ error: "parse_failed", message: parseResult.error }, 422);
   }
 
-  const rows = mapPGEBillToRows(
-    parseResult.bill!,
+  const rows = mapBillToRows(
+    parseResult,
     storageRef,
     householdId,
-    userId,
-    parseResult.ocrFallback ?? false
+    userId
   );
 
   if (rows.length === 0) {
