@@ -1,0 +1,53 @@
+# Production / CI pulls — use pre-built images from GitHub Container Registry.
+# On the VM: copy this next to your .env and run:
+#   docker compose -f docker-compose.ghcr.yml pull
+#   docker compose -f docker-compose.ghcr.yml up -d
+#
+# Set in .env (lowercase owner/repo, same as github.com/owner/repo):
+#   GHCR_IMAGE_ROOT=ghcr.io/your-org/your-repo
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-whatismybill}
+      POSTGRES_USER:     ${POSTGRES_USER:-whatismybill}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-whatismybill}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ${GHCR_IMAGE_ROOT}/backend:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-whatismybill}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-whatismybill}
+      JWT_SECRET:   ${JWT_SECRET}
+      UPLOAD_DIR:   /data/bills
+      PORT:         3001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    volumes:
+      - bills_data:/data/bills
+    ports:
+      - "127.0.0.1:3001:3001"
+
+  frontend:
+    image: ${GHCR_IMAGE_ROOT}/frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  postgres_data:
+  bills_data:

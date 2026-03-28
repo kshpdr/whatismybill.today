@@ -43,3 +43,24 @@ jobs:
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # SSH to VM, pull new images, restart app (requires secrets + var — see DEPLOY.md)
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Set repo variable DEPLOY_ENABLED=true (Settings → Secrets and variables → Actions → Variables) when the VM is ready
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+            echo "${{ secrets.GHCR_READ_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+            docker compose -f docker-compose.ghcr.yml pull backend frontend
+            docker compose -f docker-compose.ghcr.yml up -d backend frontend
