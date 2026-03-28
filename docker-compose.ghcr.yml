@@ -1,10 +1,6 @@
-# Production / CI pulls — use pre-built images from GitHub Container Registry.
-# On the VM: copy this next to your .env and run:
-#   docker compose -f docker-compose.ghcr.yml pull
+# Production — pulls pre-built images from GitHub Container Registry.
+# On the VM: clone the repo, put .env next to this file, then run:
 #   docker compose -f docker-compose.ghcr.yml up -d
-#
-# Set in .env (lowercase owner/repo, same as github.com/owner/repo):
-#   GHCR_IMAGE_ROOT=ghcr.io/your-org/your-repo
 
 services:
 
@@ -24,7 +20,7 @@ services:
       retries: 10
 
   backend:
-    image: ${GHCR_IMAGE_ROOT}/backend:latest
+    image: ghcr.io/kshpdr/whatismybill.today/backend:latest
     restart: unless-stopped
     depends_on:
       postgres:
@@ -41,7 +37,7 @@ services:
       - "127.0.0.1:3001:3001"
 
   frontend:
-    image: ${GHCR_IMAGE_ROOT}/frontend:latest
+    image: ghcr.io/kshpdr/whatismybill.today/frontend:latest
     restart: unless-stopped
     depends_on:
       - backend
