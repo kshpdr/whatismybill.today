@@ -17,7 +17,7 @@ import type { AnyBill, ParseBillResult, PGEBill, SJWBill } from "./types.js";
  */
 export interface BillMeta {
   householdId: string;
-  storageRef:  string;       // Firebase Storage path to the original PDF
+  storageRef:  string | null; // relative path to the original PDF; null when privacyMode=true
   uploadedBy?: string;       // uid of the user who uploaded
   uploadedAt?: string;       // ISO timestamp — defaults to now if omitted
   ocrFallback?: boolean;     // true when bill was parsed via OCR path

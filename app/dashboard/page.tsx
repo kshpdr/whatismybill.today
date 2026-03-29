@@ -424,7 +424,7 @@ function BillDetailPanel({
                 { label: "Bill ID",      value: bill.id },
                 { label: "Household",    value: bill.householdId },
                 { label: "Uploaded",     value: new Date(bill.uploadedAt).toLocaleString() },
-                { label: "Storage ref",  value: bill.storageRef },
+                { label: "Storage ref",  value: bill.storageRef ?? "not stored" },
                 { label: "Parse status", value: bill.parseStatus ?? "—" },
               ].map((r) => (
                 <div key={r.label} className="flex items-start justify-between gap-3 px-4 py-2.5">
@@ -443,16 +443,23 @@ function BillDetailPanel({
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-[var(--wm-t2)]">Original PDF</p>
-                <p className="text-[11px] text-[var(--wm-t3)] font-mono truncate">{bill.storageRef.split("/").pop()}</p>
+                {bill.storageRef
+                  ? <p className="text-[11px] text-[var(--wm-t3)] font-mono truncate">{bill.storageRef.split("/").pop()}</p>
+                  : <p className="text-[11px] text-[var(--wm-t3)]">PDF not stored</p>
+                }
               </div>
             </div>
-            <button
-              onClick={handleViewPdf}
-              disabled={pdfLoading}
-              className="shrink-0 text-xs font-semibold text-[#e8a838] hover:text-[#6892b0] disabled:opacity-50 transition-colors"
-            >
-              {pdfLoading ? "Opening…" : "View →"}
-            </button>
+            {bill.storageRef ? (
+              <button
+                onClick={handleViewPdf}
+                disabled={pdfLoading}
+                className="shrink-0 text-xs font-semibold text-[#e8a838] hover:text-[#6892b0] disabled:opacity-50 transition-colors"
+              >
+                {pdfLoading ? "Opening…" : "View →"}
+              </button>
+            ) : (
+              <span className="shrink-0 text-xs text-[var(--wm-t3)]">Parse only</span>
+            )}
           </div>
 
           {/* delete zone */}
@@ -512,6 +519,7 @@ function UploadModal({
 }) {
   const [state, setState] = useState<UploadState>({ phase: "idle" });
   const [dragging, setDragging] = useState(false);
+  const [privacyMode, setPrivacyMode] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
@@ -524,6 +532,7 @@ function UploadModal({
     const form = new FormData();
     form.append("file", file);
     form.append("householdId", householdId);
+    if (privacyMode) form.append("privacyMode", "true");
 
     try {
       const res = await apiFetch<{ bills: Bill[] }>("/bills/upload", {
@@ -628,9 +637,21 @@ function UploadModal({
           )}
 
           {state.phase === "idle" && (
-            <p className="text-center text-xs text-[var(--wm-t3)]">
-              Your PDF is stored securely and never shared.
-            </p>
+            <button
+              type="button"
+              onClick={() => setPrivacyMode(!privacyMode)}
+              className="w-full flex items-start gap-3 px-3 py-2.5 rounded-md border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] transition-colors text-left"
+            >
+              <div className={`mt-0.5 w-4 h-4 rounded shrink-0 border flex items-center justify-center transition-colors ${
+                privacyMode ? "bg-[#e8a838] border-[#e8a838]" : "border-[var(--wm-border)] bg-transparent"
+              }`}>
+                {privacyMode && <Check className="w-3 h-3 text-black" />}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[var(--wm-t2)]">Don&apos;t store PDF</p>
+                <p className="text-xs text-[var(--wm-t3)] mt-0.5">We&apos;ll only keep the numbers — your original bill won&apos;t be saved on our servers.</p>
+              </div>
+            </button>
           )}
         </div>
       </div>

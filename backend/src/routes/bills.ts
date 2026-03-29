@@ -95,11 +95,15 @@ router.post("/upload", async (c) => {
     return c.json({ error: "Not a member of this household" }, 403);
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  const buffer      = Buffer.from(await file.arrayBuffer());
+  const privacyMode = body["privacyMode"] === "true";
 
-  // Give the PDF a stable ID before parsing so storage ref is determined upfront
-  const pdfId     = randomUUID();
-  const storageRef = await saveFile(householdId, pdfId, buffer);
+  // Save PDF unless user opted out
+  let storageRef: string | null = null;
+  if (!privacyMode) {
+    const pdfId = randomUUID();
+    storageRef = await saveFile(householdId, pdfId, buffer);
+  }
 
   // Parse the PDF
   const parseResult = await parseBillPDF(buffer);
@@ -115,7 +119,8 @@ router.post("/upload", async (c) => {
     parseResult,
     storageRef,
     householdId,
-    userId
+    userId,
+    privacyMode ? null : parseResult.rawText,
   );
 
   if (rows.length === 0) {
@@ -155,6 +160,10 @@ router.get("/:id/pdf", async (c) => {
     return c.json({ error: "Not a member of this household" }, 403);
   }
 
+  if (!bill.storageRef) {
+    return c.json({ error: "PDF was not stored for this bill" }, 404);
+  }
+
   let fileBuffer: Buffer;
   try {
     fileBuffer = await getFile(bill.storageRef);
@@ -185,7 +194,7 @@ router.delete("/:id", async (c) => {
   }
 
   await db.delete(bills).where(eq(bills.id, id));
-  await deleteFile(bill.storageRef);
+  if (bill.storageRef) await deleteFile(bill.storageRef);
 
   return c.body(null, 204);
 });

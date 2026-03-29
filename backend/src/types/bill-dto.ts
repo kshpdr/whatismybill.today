@@ -23,7 +23,7 @@ export interface Bill {
   usageUnit:           string;
   unitPrice:           number;
   charges:             LineCharge[];
-  storageRef:          string;
+  storageRef:          string | null;
   uploadedBy?:         string;
   parseStatus?:        ParseStatus;
   uploadedAt:          string;

@@ -178,6 +178,7 @@ router.get("/share/:token/bills/:billId/pdf", async (c) => {
     and(eq(bills.id, billId), eq(bills.householdId, link.householdId))
   ).limit(1);
   if (!bill) return c.json({ error: "Bill not found" }, 404);
+  if (!bill.storageRef) return c.json({ error: "PDF was not stored for this bill" }, 404);
 
   const { getFile } = await import("../lib/storage.js");
   const fileBuffer  = await getFile(bill.storageRef);

@@ -9,9 +9,10 @@ import type { NewBill } from "../db/schema.js";
  */
 export function mapBillToRows(
   result: ParseBillResult,
-  storageRef: string,
+  storageRef: string | null,
   householdId: string,
   uploadedBy: string,
+  rawText?: string | null,
 ): NewBill[] {
   const dtos = toBills(result, { householdId, storageRef, uploadedBy });
 
@@ -28,9 +29,10 @@ export function mapBillToRows(
       usageUnit:           dto.usageUnit,
       unitPrice:           String(dto.unitPrice),
       charges:             dto.charges,
-      storageRef:          dto.storageRef,
+      storageRef:          dto.storageRef ?? null,
       uploadedBy:          dto.uploadedBy ?? null,
       parseStatus:         dto.parseStatus ?? "success",
+      rawText:             rawText ?? null,
     }));
 }
 

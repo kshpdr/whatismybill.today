@@ -49,7 +49,7 @@ export interface Bill {
   usageUnit:            string;    // "kWh" | "Therms" | "CCF"
   unitPrice:            number;
   charges:              LineCharge[];
-  storageRef:           string;
+  storageRef:           string | null;
   uploadedBy?:          string;
   parseStatus?:         ParseStatus;
   parseError?:          string;

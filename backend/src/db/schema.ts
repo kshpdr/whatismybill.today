@@ -82,7 +82,7 @@ export const bills = pgTable("bills", {
   usageUnit:            varchar("usage_unit",    { length: 20  }).notNull(), // kWh | Therms | CCF
   unitPrice:            numeric("unit_price",    { precision: 10, scale: 6 }).notNull(),
   charges:              jsonb("charges").notNull().$type<{ label: string; amount: number }[]>(),
-  storageRef:           varchar("storage_ref",   { length: 500 }).notNull(), // relative path on disk
+  storageRef:           varchar("storage_ref",   { length: 500 }), // relative path on disk; null when privacyMode=true
   uploadedBy:           uuid("uploaded_by").references(() => users.id),
   parseStatus:          varchar("parse_status",  { length: 20  }).notNull().default("success"),
   parseError:           text("parse_error"),
