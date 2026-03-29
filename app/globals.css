@@ -163,6 +163,15 @@ html.dark {
   }
 }
 
+/* ── View transition (mobile tab switch) ── */
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-view-in {
+  animation: view-in 0.18s ease-out both;
+}
+
 /* ── Liquid Glass mockup: ambient orb drift animations ── */
 @keyframes orb-drift-1 {
   0%, 100% { transform: translate(0, 0) scale(1); }

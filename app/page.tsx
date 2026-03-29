@@ -4,11 +4,13 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Zap, Sun, Moon } from "lucide-react";
 import CoverageMapClient from "@/app/components/CoverageMapClient";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LandingPage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const { user, loading } = useAuth();
 
   return (
     <main className="min-h-screen bg-[var(--wm-bg)] text-[var(--wm-t1)]">
@@ -42,25 +44,36 @@ export default function LandingPage() {
             exactly what you&apos;re paying for — broken down by charge,
             compared month over month.
           </p>
-          <div className="flex gap-2 pt-2">
-            <a
-              href="/signup"
-              className="bg-[#e8a838] hover:bg-[#d4993a] text-black font-semibold text-sm rounded-md px-4 py-2 transition-colors"
-            >
-              Get started
-            </a>
-            <a
-              href="/demo"
-              className="border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] text-[var(--wm-t2)] text-sm rounded-md px-4 py-2 transition-colors"
-            >
-              View demo
-            </a>
-            <a
-              href="/login"
-              className="text-[var(--wm-t3)] hover:text-[var(--wm-t2)] text-sm px-4 py-2 transition-colors"
-            >
-              Sign in
-            </a>
+          <div className="flex gap-2 pt-2 min-h-[36px]">
+            {!loading && (user ? (
+              <a
+                href="/dashboard"
+                className="bg-[#e8a838] hover:bg-[#d4993a] text-black font-semibold text-sm rounded-md px-4 py-2 transition-colors"
+              >
+                Go to dashboard
+              </a>
+            ) : (
+              <>
+                <a
+                  href="/signup"
+                  className="bg-[#e8a838] hover:bg-[#d4993a] text-black font-semibold text-sm rounded-md px-4 py-2 transition-colors"
+                >
+                  Get started
+                </a>
+                <a
+                  href="/demo"
+                  className="border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] text-[var(--wm-t2)] text-sm rounded-md px-4 py-2 transition-colors"
+                >
+                  View demo
+                </a>
+                <a
+                  href="/login"
+                  className="text-[var(--wm-t3)] hover:text-[var(--wm-t2)] text-sm px-4 py-2 transition-colors"
+                >
+                  Sign in
+                </a>
+              </>
+            ))}
           </div>
         </section>
 

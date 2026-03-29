@@ -1226,7 +1226,7 @@ function DashboardPage() {
                   {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
               )}
-              <button className="flex items-center gap-1.5 bg-[#e8a838] hover:bg-[#d4993a] text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-colors">
+              <button onClick={() => setShowUpload(true)} className="flex items-center gap-1.5 bg-[#e8a838] hover:bg-[#d4993a] text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-colors">
                 <Upload className="w-3.5 h-3.5" />Upload
               </button>
             </div>
@@ -1254,7 +1254,7 @@ function DashboardPage() {
 
           {/* ══════════════════════ DASHBOARD VIEW ══════════════════════ */}
           {view === "dashboard" && (
-            <div className="max-w-2xl md:mx-auto px-4 md:px-8 py-4 md:py-6 space-y-4">
+            <div key="dashboard" className="animate-view-in max-w-2xl md:mx-auto px-4 md:px-8 py-4 md:py-6 space-y-4">
 
               {/* ── LOADING STATE ── */}
               {billsLoading && !isDemo && (
@@ -1439,13 +1439,13 @@ function DashboardPage() {
                           <div className="h-full bg-[#d4993a]" style={{ width: `${pgeElecBarPct}%` }} />
                           <div className="h-full bg-[#6892b0]" style={{ width: `${pgeGasBarPct}%` }} />
                         </div>
-                        <div className="flex mt-2.5 text-[11px]">
-                          <div style={{ width: `${pgeElecBarPct}%` }} className="min-w-0">
-                            <p className="font-bold text-[#e8a838] truncate">Electricity</p>
+                        <div className="flex justify-between mt-2.5 text-[11px]">
+                          <div>
+                            <p className="font-bold text-[#e8a838]">Electricity</p>
                             <p className="text-[var(--wm-t3)] tabular-nums">{fmtRound$(pgeCurrent.elec)}</p>
                           </div>
-                          <div className="flex-1 min-w-0 pl-1">
-                            <p className="font-bold text-[#6892b0] truncate">Gas</p>
+                          <div className="text-right">
+                            <p className="font-bold text-[#6892b0]">Gas</p>
                             <p className="text-[var(--wm-t3)] tabular-nums">{fmtRound$(pgeCurrent.gas)}</p>
                           </div>
                         </div>
@@ -1861,7 +1861,7 @@ function DashboardPage() {
 
           {/* ══════════════════════ BILLS VIEW ══════════════════════ */}
           {view === "bills" && (
-            <div className="px-4 md:px-8 py-4 md:py-6 max-w-2xl md:mx-auto">
+            <div key="bills" className="animate-view-in px-4 md:px-8 py-4 md:py-6 max-w-2xl md:mx-auto">
               <div className="md:hidden mb-4">
                 <h1 className="font-bold text-[var(--wm-t1)] text-xl">All Bills</h1>
               </div>
