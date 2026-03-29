@@ -34,31 +34,30 @@ function ClientOnly({ children, height }: { children: React.ReactNode; height: s
   return <>{children}</>;
 }
 
-const C = { electricity: "#F59E0B", gas: "#60A5FA", water: "#22D3EE" };
+const C = { electricity: "#d4993a", gas: "#6892b0", water: "#47998e" };
 
 // ─── Bill row ─────────────────────────────────────────────────────────────────
 
 function BillRow({ bill, token, onSelect }: { bill: Bill; token: string; onSelect: (b: Bill) => void }) {
-  const bg = bill.utilityType === "electricity" ? "#FEF3C7" : bill.utilityType === "gas" ? "#DBEAFE" : "#CFFAFE";
   return (
     <button
-      className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors text-left"
+      className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[var(--wm-border-sub)] last:border-0 hover:bg-[var(--wm-hover)] transition-colors text-left"
       onClick={() => onSelect(bill)}
     >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: bg }}>
-        {bill.utilityType === "electricity" && <Zap className="w-4 h-4 text-amber-600" />}
-        {bill.utilityType === "gas"         && <Flame className="w-4 h-4 text-blue-600" />}
-        {bill.utilityType === "water"       && <Droplets className="w-4 h-4 text-cyan-600" />}
+      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-[var(--wm-surface)] border border-[var(--wm-border)]">
+        {bill.utilityType === "electricity" && <Zap className="w-4 h-4" style={{ color: C.electricity }} />}
+        {bill.utilityType === "gas"         && <Flame className="w-4 h-4" style={{ color: C.gas }} />}
+        {bill.utilityType === "water"       && <Droplets className="w-4 h-4" style={{ color: C.water }} />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-slate-800">{bill.provider}</p>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-sm text-[var(--wm-t1)]">{bill.provider}</p>
+        <p className="text-xs text-[var(--wm-t3)] mt-0.5">
           {fmtDate(bill.billingPeriodStart)} – {fmtDate(bill.billingPeriodEnd)} · {bill.usage > 0 ? `${bill.usage} ${bill.usageUnit}` : bill.usageUnit}
         </p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-sm font-semibold text-slate-900 tabular-nums">{fmt$(bill.totalAmount)}</span>
-        <ChevronRight className="w-4 h-4 text-slate-300" />
+        <span className="text-sm font-mono text-[var(--wm-t1)] tabular-nums">{fmt$(bill.totalAmount)}</span>
+        <ChevronRight className="w-4 h-4 text-[var(--wm-t3)]" />
       </div>
     </button>
   );
@@ -68,7 +67,7 @@ function BillRow({ bill, token, onSelect }: { bill: Bill; token: string; onSelec
 
 function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; onClose: () => void }) {
   const [pdfLoading, setPdfLoading] = useState(false);
-  const colors = ["#F59E0B", "#60A5FA", "#34D399", "#F472B6", "#A78BFA", "#FB923C"];
+  const colors = [C.electricity, C.gas, C.water, "#a78bfa", "#fb923c", "#f472b6"];
 
   async function handleViewPdf() {
     setPdfLoading(true);
@@ -86,17 +85,17 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end md:flex-row">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <aside className="relative flex flex-col bg-white shadow-2xl w-full rounded-t-3xl max-h-[88dvh] md:rounded-none md:max-h-full md:h-full md:w-[400px]">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <aside className="relative flex flex-col bg-[var(--wm-card)] border-l border-[var(--wm-border)] w-full rounded-t-md max-h-[88dvh] md:rounded-none md:max-h-full md:h-full md:w-[400px]">
         <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 bg-slate-300 rounded-full" />
+          <div className="w-10 h-1 bg-[rgba(255,255,255,0.10)] rounded-full" />
         </div>
-        <div className="px-5 py-3 border-b border-slate-100 flex items-start justify-between shrink-0">
+        <div className="px-5 py-3 border-b border-[var(--wm-border)] flex items-start justify-between shrink-0">
           <div className="space-y-1">
-            <p className="text-sm font-bold text-slate-800 capitalize">{bill.utilityType} · {bill.provider}</p>
-            <p className="text-xs text-slate-400">{fmtDate(bill.billingPeriodStart)} – {fmtDate(bill.billingPeriodEnd)}</p>
+            <p className="text-sm text-[var(--wm-t1)] capitalize">{bill.utilityType} · {bill.provider}</p>
+            <p className="text-xs text-[var(--wm-t3)] font-mono">{fmtDate(bill.billingPeriodStart)} – {fmtDate(bill.billingPeriodEnd)}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400">
+          <button onClick={onClose} className="p-1.5 hover:bg-[var(--wm-hover)] rounded-md text-[var(--wm-t2)] hover:text-[var(--wm-t1)] transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -108,9 +107,9 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
               { label: bill.usageUnit || "Usage", value: bill.usage > 0 ? String(bill.usage) : "—" },
               { label: `/${bill.usageUnit}`,  value: bill.unitPrice > 0 ? `$${bill.unitPrice.toFixed(3)}` : "—" },
             ].map((k) => (
-              <div key={k.label} className="bg-slate-50 rounded-xl p-3 text-center">
-                <p className="text-base font-semibold text-slate-900 tabular-nums">{k.value}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">{k.label}</p>
+              <div key={k.label} className="bg-[var(--wm-surface)] rounded-md p-3 text-center">
+                <p className="text-base font-mono text-[var(--wm-t1)] tabular-nums">{k.value}</p>
+                <p className="text-[11px] text-[var(--wm-t3)] mt-0.5">{k.label}</p>
               </div>
             ))}
           </div>
@@ -118,18 +117,18 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
           {/* Charges */}
           {bill.charges.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Charge Breakdown</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-3">Charge Breakdown</h3>
               <div className="space-y-2.5">
                 {bill.charges.map((c, i) => (
                   <div key={c.label}>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="flex items-center gap-1.5 text-slate-600">
+                      <span className="flex items-center gap-1.5 text-[var(--wm-t2)]">
                         <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: colors[i % colors.length] }} />
                         {c.label}
                       </span>
-                      <span className="font-semibold tabular-nums">{fmt$(c.amount)}</span>
+                      <span className="font-mono tabular-nums text-[var(--wm-t1)]">{fmt$(c.amount)}</span>
                     </div>
-                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-1 bg-[var(--wm-border-sub)] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{
                         width: `${bill.totalAmount > 0 ? (c.amount / bill.totalAmount) * 100 : 0}%`,
                         background: colors[i % colors.length],
@@ -142,17 +141,17 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
           )}
 
           {/* PDF */}
-          <div className="border border-slate-100 rounded-2xl p-4 flex items-center justify-between gap-3">
+          <div className="border border-[var(--wm-border)] rounded-md p-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-                <FileText className="w-4 h-4 text-slate-400" />
+              <div className="w-9 h-9 rounded-md bg-[var(--wm-surface)] border border-[var(--wm-border)] flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-[var(--wm-t3)]" />
               </div>
-              <p className="text-sm font-medium text-slate-700">Original PDF</p>
+              <p className="text-sm text-[var(--wm-t2)]">Original PDF</p>
             </div>
             <button
               onClick={handleViewPdf}
               disabled={pdfLoading}
-              className="shrink-0 text-xs font-semibold text-blue-500 hover:text-blue-600 disabled:opacity-50 transition-colors"
+              className="shrink-0 text-xs font-semibold text-[#e8a838] hover:text-[#d4993a] disabled:opacity-50 transition-colors"
             >
               {pdfLoading ? "Opening…" : "View →"}
             </button>
@@ -195,19 +194,19 @@ export default function SharePage() {
   }, [token]);
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="w-8 h-8 border-[3px] border-slate-200 border-t-amber-400 rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-[var(--wm-bg)]">
+      <div className="w-8 h-8 border-[3px] border-[rgba(255,255,255,0.10)] border-t-[#e8a838] rounded-full animate-spin" />
     </div>
   );
 
   if (error) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--wm-bg)] px-4">
       <div className="text-center max-w-sm">
-        <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
-          <X className="w-7 h-7 text-red-400" />
+        <div className="w-14 h-14 rounded-md bg-[var(--wm-red-dim)] border border-[var(--wm-red-dim)] flex items-center justify-center mx-auto mb-4">
+          <X className="w-7 h-7 text-[var(--wm-red-text)]" />
         </div>
-        <h1 className="text-lg font-bold text-slate-900 mb-1">Link unavailable</h1>
-        <p className="text-sm text-slate-500">{error}</p>
+        <h1 className="text-lg text-[var(--wm-t1)] mb-1">Link unavailable</h1>
+        <p className="text-sm text-[var(--wm-t2)]">{error}</p>
       </div>
     </div>
   );
@@ -221,7 +220,7 @@ export default function SharePage() {
 
   // Use anchor month logic + approx spend (not pro-rated calendar month for incomplete months)
   const anchorYearMonth = utilitySummaryAnchorMonth(allBills);
-  const approxMonthSpend = anchorYearMonth 
+  const approxMonthSpend = anchorYearMonth
     ? deriveApproxUtilitySpendInMonth(allBills, anchorYearMonth.year, anchorYearMonth.month)
     : { electricity: 0, gas: 0, water: 0 };
   const curTotal = approxMonthSpend.electricity + approxMonthSpend.gas + approxMonthSpend.water;
@@ -233,10 +232,10 @@ export default function SharePage() {
   const totalDeltaPct = prvTotal > 0 ? ((curTotal - prvTotal) / prvTotal) * 100 : 0;
 
   // Current display label (the anchor month)
-  const curMonthLabel = anchorYearMonth 
+  const curMonthLabel = anchorYearMonth
     ? `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][anchorYearMonth.month - 1]} '${String(anchorYearMonth.year).slice(2)}`
     : "";
-  
+
   // Check if anchor month is incomplete
   const anchorIsIncomplete = anchorYearMonth ? !isMonthComplete(anchorYearMonth.year, anchorYearMonth.month) : false;
 
@@ -260,19 +259,19 @@ export default function SharePage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[var(--wm-bg)]">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+      <header className="bg-[var(--wm-surface)] border-b border-[var(--wm-border)] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-amber-500 flex items-center justify-center">
-            <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+          <div className="w-7 h-7 rounded-md bg-[#e8a838] flex items-center justify-center">
+            <Zap className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-900 leading-none">{household.nickname}</p>
-            {household.address && <p className="text-[11px] text-slate-400 mt-0.5">{household.address}</p>}
+            <p className="text-sm text-[var(--wm-t1)] leading-none">{household.nickname}</p>
+            {household.address && <p className="text-[11px] text-[var(--wm-t3)] mt-0.5">{household.address}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 bg-slate-50 border border-slate-200 rounded-full px-2.5 py-1">
+        <div className="flex items-center gap-1.5 bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md px-2.5 py-1 text-xs font-mono text-[var(--wm-t3)]">
           <Shield className="w-3 h-3" />
           Read-only view
           {shareLink.label && <span>· {shareLink.label}</span>}
@@ -283,34 +282,35 @@ export default function SharePage() {
 
         {/* Hero */}
         {allBills.length > 0 && (
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-amber-300 to-cyan-300" />
+          <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md overflow-hidden">
             <div className="px-5 pt-4 pb-5">
               {latestBill && (
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-3">
                   {anchorIsIncomplete ? `${curMonthLabel} · Month in progress` : `${curMonthLabel} · Most recent complete data`}
                 </p>
               )}
               <div className="flex items-end justify-between mb-4">
                 <div>
-                  <p className="text-5xl font-bold text-slate-900 tracking-tight tabular-nums leading-none">
+                  <p className="text-5xl font-mono text-[var(--wm-t1)] tracking-tight tabular-nums leading-none">
                     {fmt$(curTotal)}
                   </p>
                   <div className="flex items-center gap-2 mt-2.5">
                     {!anchorIsIncomplete && prevMonth ? (
                       <>
-                        <span className={`flex items-center gap-0.5 text-sm font-bold px-2 py-0.5 rounded-full ${
-                          totalDeltaPct < 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                        <span className={`flex items-center gap-0.5 font-mono text-xs px-1.5 py-0.5 rounded ${
+                          totalDeltaPct < 0
+                            ? "text-[var(--wm-green-text)] bg-[var(--wm-green-dim)]"
+                            : "text-[var(--wm-red-text)] bg-[var(--wm-red-dim)]"
                         }`}>
                           {totalDeltaPct < 0 ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                           {Math.abs(totalDeltaPct).toFixed(1)}%
                         </span>
-                        <span className="text-sm text-slate-400">vs {prevMonth.month}</span>
+                        <span className="text-sm text-[var(--wm-t3)]">vs {prevMonth.month}</span>
                       </>
                     ) : anchorIsIncomplete ? (
-                      <span className="text-sm text-slate-400">Approximate · bills still arriving</span>
+                      <span className="text-sm text-[var(--wm-t3)]">Approximate · bills still arriving</span>
                     ) : (
-                      <span className="text-sm text-slate-400">First bill on record</span>
+                      <span className="text-sm text-[var(--wm-t3)]">First bill on record</span>
                     )}
                   </div>
                 </div>
@@ -322,9 +322,9 @@ export default function SharePage() {
                   { label: "Gas",         amount: approxMonthSpend.gas,         color: C.gas,         icon: <Flame className="w-3.5 h-3.5" /> },
                   { label: "Water",       amount: approxMonthSpend.water,       color: C.water,       icon: <Droplets className="w-3.5 h-3.5" /> },
                 ].map((u) => (
-                  <div key={u.label} className="bg-slate-50 rounded-xl p-3">
+                  <div key={u.label} className="bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md p-3">
                     <div className="flex items-center gap-1 mb-1" style={{ color: u.color }}>{u.icon}<span className="text-[10px] font-semibold">{u.label}</span></div>
-                    <p className="text-sm font-bold text-slate-900 tabular-nums">{fmt$(u.amount)}</p>
+                    <p className="text-sm font-mono text-[var(--wm-t1)] tabular-nums">{fmt$(u.amount)}</p>
                   </div>
                 ))}
               </div>
@@ -334,18 +334,20 @@ export default function SharePage() {
 
         {/* Monthly chart */}
         {monthlySpend.length > 1 && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-4">
-            <h2 className="font-semibold text-slate-800 text-sm mb-1">Monthly Spending</h2>
-            <p className="text-xs text-slate-400 mb-4">All utilities combined</p>
+          <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md p-4">
+            <h2 className="text-sm text-[var(--wm-t1)] mb-1">Monthly Spending</h2>
+            <p className="text-xs text-[var(--wm-t3)] mb-4">All utilities combined</p>
             <ClientOnly height="h-48">
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthlySpendWithMeta} barSize={16} barCategoryGap="32%">
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={34} />
-                    <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, ""]}
-                      contentStyle={{ border: "1px solid #E2E8F0", borderRadius: 12, fontSize: 12 }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={34} />
+                    <Tooltip
+                      formatter={(v) => [`$${Number(v).toFixed(2)}`, ""]}
+                      contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, fontSize: 12, color: "rgba(255,255,255,0.90)" }}
+                    />
                     <Bar dataKey="electricity" name="Electricity" stackId="a" fill={C.electricity} radius={[0,0,0,0]}
                       shape={(props: any) => {
                         const { x, y, width, height, payload } = props;
@@ -376,12 +378,12 @@ export default function SharePage() {
         )}
 
         {/* Bills list */}
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <h2 className="font-semibold text-slate-800 text-sm">All Bills</h2>
+        <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--wm-border)]">
+            <h2 className="text-sm text-[var(--wm-t1)]">All Bills</h2>
           </div>
           {sortedBills.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">No bills uploaded yet.</p>
+            <p className="text-sm text-[var(--wm-t3)] text-center py-8">No bills uploaded yet.</p>
           ) : (
             sortedBills.map((bill) => (
               <BillRow key={bill.id} bill={bill} token={token} onSelect={setSelectedBill} />
@@ -390,8 +392,8 @@ export default function SharePage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-400 pb-4">
-          Shared via <span className="font-semibold">whatismybill.today</span>
+        <p className="text-center text-xs text-[var(--wm-t4)] pb-4">
+          Shared via <span className="font-mono">whatismybill.today</span>
           {shareLink.expiresAt && ` · Expires ${fmtDate(shareLink.expiresAt.split("T")[0])}`}
         </p>
       </div>

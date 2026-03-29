@@ -35,17 +35,8 @@ function initials(name: string) {
   return name.split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2);
 }
 
-const AVATAR_COLORS = [
-  "bg-amber-100 text-amber-700",
-  "bg-blue-100 text-blue-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-purple-100 text-purple-700",
-  "bg-rose-100 text-rose-700",
-];
-
-function avatarColor(id: string) {
-  const idx = id.charCodeAt(id.length - 1) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[idx];
+function avatarColor(_id: string) {
+  return "bg-[var(--wm-hover)] text-[var(--wm-t2)]";
 }
 
 // ─── Invite code display ──────────────────────────────────────────────────────
@@ -53,19 +44,21 @@ function avatarColor(id: string) {
 function InviteCodeRow({ code, onCopy }: { code: string; onCopy: () => void }) {
   return (
     <div className="flex items-center justify-center gap-1.5">
-      {code.split("").map((char, i) => (
-        <div
-          key={i}
-          className={`w-10 h-12 rounded-xl border-2 border-amber-200 bg-amber-50
-            flex items-center justify-center text-lg font-bold font-mono text-amber-800
-            ${i === 2 ? "mr-1.5" : ""}`}
-        >
-          {char}
-        </div>
-      ))}
+      <div className="flex items-center gap-1">
+        {code.split("").map((char, i) => (
+          <div
+            key={i}
+            className={`w-9 h-11 rounded-md border border-[rgba(255,255,255,0.12)] bg-[var(--wm-bg)]
+              flex items-center justify-center text-base font-mono text-[var(--wm-t1)]
+              ${i === 2 ? "mr-1.5" : ""}`}
+          >
+            {char}
+          </div>
+        ))}
+      </div>
       <button
         onClick={onCopy}
-        className="ml-2 p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+        className="ml-2 p-2 rounded-md border border-[var(--wm-border)] text-[var(--wm-t2)] hover:text-[var(--wm-t1)] hover:bg-[var(--wm-hover)] transition-colors"
         title="Copy code"
       >
         <Copy size={14} />
@@ -85,10 +78,10 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1 mb-2">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] px-4 mb-2">
         {title}
       </h2>
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md overflow-hidden">
         {children}
       </div>
     </section>
@@ -276,25 +269,25 @@ export default function SettingsPage() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[var(--wm-bg)]">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-slate-200">
+      <div className="sticky top-0 z-10 bg-[var(--wm-surface)] border-b border-[var(--wm-border)]">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+            className="p-1.5 rounded-md text-[var(--wm-t2)] hover:text-[var(--wm-t1)] transition-colors"
           >
             <ChevronLeft size={20} />
           </button>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="w-6 h-6 rounded-md bg-amber-500 flex items-center justify-center shrink-0">
-              <Zap size={12} className="text-white" strokeWidth={2.5} />
+            <div className="w-6 h-6 rounded-md bg-[#e8a838] flex items-center justify-center shrink-0">
+              <Zap size={12} className="text-black" strokeWidth={2.5} />
             </div>
-            <h1 className="font-semibold text-slate-900 truncate text-sm">
+            <h1 className="font-semibold text-[var(--wm-t1)] truncate text-sm">
               {household.nickname}
             </h1>
             {isOwner && (
-              <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+              <span className="shrink-0 inline-flex items-center gap-1 bg-[var(--wm-amber-dim)] border border-[var(--wm-amber-dim)] text-[#e8a838] text-[10px] font-mono px-1.5 py-0.5 rounded">
                 <Crown size={9} />
                 Owner
               </span>
@@ -312,38 +305,38 @@ export default function SettingsPage() {
             {editing ? (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-1.5">
                     Nickname
                   </label>
                   <input
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                    className="w-full bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md px-3 py-2 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors duration-150"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-1.5">
                     Address{" "}
-                    <span className="font-normal text-slate-400">(optional)</span>
+                    <span className="font-normal normal-case tracking-normal text-[var(--wm-t4)]">(optional)</span>
                   </label>
                   <input
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="123 Maple St, Oakland CA"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                    className="w-full bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md px-3 py-2 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors duration-150"
                   />
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleSave}
                     disabled={saving || !nickname.trim()}
-                    className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 py-2 rounded-md bg-[#e8a838] hover:bg-[#d4993a] text-black text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {saving ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                     ) : (
                       <>
                         <Check size={14} />
@@ -353,7 +346,7 @@ export default function SettingsPage() {
                   </button>
                   <button
                     onClick={handleCancelEdit}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 transition-colors"
+                    className="px-4 py-2 rounded-md border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] text-[var(--wm-t2)] text-sm transition-colors"
                   >
                     <X size={14} />
                   </button>
@@ -363,8 +356,8 @@ export default function SettingsPage() {
               <>
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="text-base font-semibold text-slate-900">{household.nickname}</p>
-                    <p className="text-sm text-slate-400">
+                    <p className="text-base text-[var(--wm-t1)]">{household.nickname}</p>
+                    <p className="text-sm text-[var(--wm-t3)]">
                       {household.address ?? (
                         <span className="italic">No address set</span>
                       )}
@@ -373,14 +366,14 @@ export default function SettingsPage() {
                   {isOwner && (
                     <button
                       onClick={() => setEditing(true)}
-                      className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-500 hover:bg-slate-50 transition-colors"
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] text-xs text-[var(--wm-t2)] hover:text-[var(--wm-t1)] transition-colors"
                     >
                       <Pencil size={12} />
                       Edit
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-[var(--wm-t3)]">
                   Created{" "}
                   {new Date(household.createdAt).toLocaleDateString("en-US", {
                     month: "long",
@@ -398,12 +391,12 @@ export default function SettingsPage() {
             <div
               key={member.id}
               className={`flex items-center gap-3 px-4 py-3 ${
-                i < members.length - 1 ? "border-b border-slate-100" : ""
+                i < members.length - 1 ? "border-b border-[var(--wm-border-sub)]" : ""
               }`}
             >
               {/* Avatar */}
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${avatarColor(member.id)}`}
+                className={`w-9 h-9 rounded-md flex items-center justify-center text-sm font-mono shrink-0 ${avatarColor(member.id)}`}
               >
                 {initials(member.name)}
               </div>
@@ -411,27 +404,27 @@ export default function SettingsPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-slate-800 truncate">
+                  <p className="text-sm text-[var(--wm-t1)] truncate">
                     {member.name}
                     {member.id === user?.id && (
-                      <span className="text-slate-400 font-normal ml-1 text-xs">· you</span>
+                      <span className="text-[var(--wm-t3)] ml-1 text-xs">· you</span>
                     )}
                   </p>
                   {member.isOwner && (
-                    <span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                    <span className="shrink-0 inline-flex items-center gap-0.5 bg-[var(--wm-amber-dim)] border border-[var(--wm-amber-dim)] text-[#e8a838] text-[10px] font-mono px-1.5 py-0.5 rounded">
                       <Crown size={8} />
                       Owner
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-400 truncate">{member.email}</p>
+                <p className="text-xs text-[var(--wm-t3)] truncate">{member.email}</p>
               </div>
 
               {/* Remove (owner only, not for self or other owner) */}
               {isOwner && !member.isOwner && (
                 <button
                   onClick={() => handleRemove(member.id)}
-                  className="shrink-0 p-2 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                  className="shrink-0 p-2 rounded-md text-[var(--wm-t3)] hover:text-[var(--wm-red-text)] hover:bg-[var(--wm-red-dim)] transition-colors"
                   title={`Remove ${member.name}`}
                 >
                   <UserMinus size={14} />
@@ -441,9 +434,9 @@ export default function SettingsPage() {
           ))}
 
           {/* Invite hint */}
-          <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center gap-2">
-            <Users size={13} className="text-slate-400 shrink-0" />
-            <p className="text-xs text-slate-400">
+          <div className="px-4 py-3 bg-[var(--wm-surface)] border-t border-[var(--wm-border-sub)] flex items-center gap-2">
+            <Users size={13} className="text-[var(--wm-t3)] shrink-0" />
+            <p className="text-xs text-[var(--wm-t3)]">
               Share the invite code below to add more members.
             </p>
           </div>
@@ -452,7 +445,7 @@ export default function SettingsPage() {
         {/* ── INVITE CODE ── */}
         <Section title="Invite code">
           <div className="px-4 py-5 space-y-4">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-[var(--wm-t2)]">
               {isOwner
                 ? "Share this code with anyone you want to add to your home."
                 : "Give this code to people you'd like to invite. Ask the owner to rotate it if needed."}
@@ -463,11 +456,11 @@ export default function SettingsPage() {
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-md border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] text-sm text-[var(--wm-t2)] hover:text-[var(--wm-t1)] transition-colors"
               >
                 {copied ? (
                   <>
-                    <Check size={13} className="text-emerald-500" />
+                    <Check size={13} className="text-[var(--wm-green-text)]" />
                     Copied!
                   </>
                 ) : (
@@ -480,7 +473,7 @@ export default function SettingsPage() {
 
               <button
                 onClick={handleShare}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#e8a838] hover:bg-[#d4993a] text-black text-sm font-semibold transition-colors"
               >
                 <Share2 size={13} />
                 Share
@@ -490,7 +483,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleRotate}
                   disabled={rotating}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-500 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-md border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] text-sm text-[var(--wm-t2)] hover:text-[var(--wm-t1)] transition-colors disabled:opacity-50"
                   title="Generate a new code — old one stops working"
                 >
                   <RotateCw size={13} className={rotating ? "animate-spin" : ""} />
@@ -500,7 +493,7 @@ export default function SettingsPage() {
             </div>
 
             {isOwner && (
-              <p className="text-center text-xs text-slate-400">
+              <p className="text-center text-xs text-[var(--wm-t3)]">
                 Rotating generates a new code. The old code stops working immediately.
               </p>
             )}
@@ -510,7 +503,7 @@ export default function SettingsPage() {
         {/* ── SHARE LINKS ── */}
         <Section title="Share with landlord">
           <div className="px-4 py-4 space-y-4">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--wm-t3)]">
               Generate a read-only link. Anyone with it can view your bills and charts — no account needed. You can revoke it anytime.
             </p>
 
@@ -522,12 +515,12 @@ export default function SettingsPage() {
                 value={shareLabel}
                 onChange={(e) => setShareLabel(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateShare()}
-                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                className="flex-1 bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md px-3 py-2 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors duration-150"
               />
               <button
                 onClick={handleCreateShare}
                 disabled={shareCreating}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold disabled:opacity-50 transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-[#e8a838] hover:bg-[#d4993a] text-black text-sm font-semibold disabled:opacity-50 transition-colors shrink-0"
               >
                 <Plus size={14} />
                 {shareCreating ? "…" : "Create"}
@@ -536,30 +529,30 @@ export default function SettingsPage() {
 
             {/* Existing links */}
             {shareLoading ? (
-              <p className="text-xs text-slate-400 text-center py-2">Loading…</p>
+              <p className="text-xs text-[var(--wm-t3)] text-center py-2">Loading…</p>
             ) : shareLinks.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-2">No active share links.</p>
+              <p className="text-xs text-[var(--wm-t3)] text-center py-2">No active share links.</p>
             ) : (
               <div className="space-y-2">
                 {shareLinks.map((l) => (
-                  <div key={l.token} className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5">
-                    <Shield size={13} className="text-slate-400 shrink-0" />
+                  <div key={l.token} className="flex items-center gap-2 bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md px-3 py-2.5">
+                    <Shield size={13} className="text-[var(--wm-t3)] shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-700 truncate">{l.label ?? "Untitled link"}</p>
-                      <p className="text-[10px] text-slate-400 font-mono truncate">{`…${l.token.slice(-8)}`}
+                      <p className="text-xs text-[var(--wm-t1)] truncate">{l.label ?? "Untitled link"}</p>
+                      <p className="text-[10px] text-[var(--wm-t3)] font-mono truncate">{`…${l.token.slice(-8)}`}
                         {l.expiresAt && ` · expires ${new Date(l.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" })}`}
                       </p>
                     </div>
                     <button
                       onClick={() => copyShareLink(l.token)}
-                      className="shrink-0 p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-500"
+                      className="shrink-0 p-1.5 hover:bg-[var(--wm-hover)] rounded-md transition-colors text-[var(--wm-t2)] hover:text-[var(--wm-t1)]"
                       title="Copy link"
                     >
-                      {copiedToken === l.token ? <Check size={13} className="text-emerald-500" /> : <Link size={13} />}
+                      {copiedToken === l.token ? <Check size={13} className="text-[var(--wm-green-text)]" /> : <Link size={13} />}
                     </button>
                     <button
                       onClick={() => handleRevokeShare(l.token)}
-                      className="shrink-0 p-1.5 hover:bg-red-100 rounded-lg transition-colors text-slate-400 hover:text-red-500"
+                      className="shrink-0 p-1.5 hover:bg-[var(--wm-red-dim)] rounded-md transition-colors text-[var(--wm-t3)] hover:text-[var(--wm-red-text)]"
                       title="Revoke"
                     >
                       <X size={13} />
@@ -575,30 +568,30 @@ export default function SettingsPage() {
         <section>
           <button
             onClick={() => setShowDanger(!showDanger)}
-            className="w-full flex items-center justify-between px-1 py-1 group"
+            className="w-full flex items-center justify-between px-4 py-1 group"
           >
-            <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest group-hover:text-red-400 transition-colors">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] group-hover:text-[var(--wm-red-text)] transition-colors">
               Danger zone
             </h2>
             <AlertTriangle
               size={13}
-              className={`transition-colors ${showDanger ? "text-red-400" : "text-slate-300 group-hover:text-red-400"}`}
+              className={`transition-colors ${showDanger ? "text-[var(--wm-red-text)]" : "text-[var(--wm-t3)] group-hover:text-[var(--wm-red-text)]"}`}
             />
           </button>
 
           {showDanger && (
-            <div className="mt-2 bg-white rounded-2xl border border-red-100 overflow-hidden">
+            <div className="mt-2 bg-[var(--wm-red-dim)] border border-[var(--wm-red-dim)] rounded-md overflow-hidden">
               {isOwner ? (
                 <button
                   onClick={handleDelete}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-red-50 transition-colors group"
+                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-[var(--wm-red-dim)] transition-colors group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0 group-hover:bg-red-200 transition-colors">
-                    <Trash2 size={14} className="text-red-500" />
+                  <div className="w-8 h-8 rounded-md bg-[var(--wm-red-dim)] flex items-center justify-center shrink-0">
+                    <Trash2 size={14} className="text-[var(--wm-red-text)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-red-600">Delete this home</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-sm text-[var(--wm-red-text)]">Delete this home</p>
+                    <p className="text-xs text-[var(--wm-t3)] mt-0.5">
                       Permanently removes all bills and data. Cannot be undone.
                     </p>
                   </div>
@@ -606,14 +599,14 @@ export default function SettingsPage() {
               ) : (
                 <button
                   onClick={handleLeave}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-red-50 transition-colors group"
+                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-[var(--wm-red-dim)] transition-colors group"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0 group-hover:bg-red-200 transition-colors">
-                    <LogOut size={14} className="text-red-500" />
+                  <div className="w-8 h-8 rounded-md bg-[var(--wm-red-dim)] flex items-center justify-center shrink-0">
+                    <LogOut size={14} className="text-[var(--wm-red-text)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-red-600">Leave this home</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-sm text-[var(--wm-red-text)]">Leave this home</p>
+                    <p className="text-xs text-[var(--wm-t3)] mt-0.5">
                       You&apos;ll lose access to all bills in this home.
                     </p>
                   </div>

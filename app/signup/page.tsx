@@ -15,7 +15,7 @@ function PasswordStrength({ password }: { password: string }) {
     { label: "Contains a letter", pass: /[a-zA-Z]/.test(password) },
   ];
   const score = checks.filter((c) => c.pass).length;
-  const color = score === 0 ? "bg-slate-200" : score === 1 ? "bg-red-400" : score === 2 ? "bg-amber-400" : "bg-emerald-400";
+  const color = score === 0 ? "bg-[rgba(255,255,255,0.07)]" : score === 1 ? "bg-[#f87171]" : score === 2 ? "bg-[#e8a838]" : "bg-[#4ade80]";
 
   if (!password) return null;
 
@@ -23,12 +23,12 @@ function PasswordStrength({ password }: { password: string }) {
     <div className="mt-2 space-y-2">
       <div className="flex gap-1">
         {[0, 1, 2].map((i) => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i < score ? color : "bg-slate-200"}`} />
+          <div key={i} className={`h-1 flex-1 rounded-full transition-all ${i < score ? color : "bg-[rgba(255,255,255,0.07)]"}`} />
         ))}
       </div>
       <ul className="space-y-1">
         {checks.map((c) => (
-          <li key={c.label} className={`flex items-center gap-1.5 text-xs transition-colors ${c.pass ? "text-emerald-600" : "text-slate-400"}`}>
+          <li key={c.label} className={`flex items-center gap-1.5 text-xs transition-colors ${c.pass ? "text-[var(--wm-green-text)]" : "text-[var(--wm-t3)]"}`}>
             <Check className={`w-3 h-3 transition-opacity ${c.pass ? "opacity-100" : "opacity-30"}`} />
             {c.label}
           </li>
@@ -68,75 +68,26 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-dvh flex bg-white">
+    <div className="min-h-dvh flex items-center justify-center bg-[var(--wm-bg)] px-6 py-12">
+      <div className="w-full max-w-sm">
 
-      {/* ── LEFT PANEL ── */}
-      <div className="hidden md:flex flex-col w-[480px] shrink-0 bg-slate-900 relative overflow-hidden p-12">
-        <div className="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* brand */}
-        <div className="flex items-center gap-2.5 relative z-10">
-          <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30">
-            <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-          </div>
-          <span className="font-semibold text-white">whatismybill.today</span>
+        {/* brand mark */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <Zap className="w-4 h-4 text-[#e8a838]" strokeWidth={2.5} />
+          <span className="text-sm font-mono text-[var(--wm-t2)]">whatismybill.today</span>
         </div>
 
-        {/* what you get */}
-        <div className="relative z-10 mt-auto mb-auto">
-          <h1 className="text-3xl font-bold text-white leading-tight mb-6">
-            Know your bills<br />inside and out.
-          </h1>
-
-          <ul className="space-y-4">
-            {[
-              { icon: "⚡", title: "Track electricity, gas & water", body: "All three utilities in one place, one clean view." },
-              { icon: "📊", title: "Spot trends instantly", body: "See if you're spending more than last month and exactly why." },
-              { icon: "💡", title: "Understand every charge", body: "Energy, delivery, programs, taxes — broken down per bill." },
-              { icon: "🏠", title: "Multiple households", body: "Manage your home, rental, or family properties together." },
-            ].map((item) => (
-              <li key={item.title} className="flex gap-3">
-                <span className="text-xl mt-0.5 shrink-0">{item.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold text-white">{item.title}</p>
-                  <p className="text-sm text-slate-400 mt-0.5">{item.body}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* free badge */}
-        <div className="relative z-10 flex items-center gap-2 mt-8">
-          <div className="w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center shrink-0">
-            <Check className="w-3 h-3 text-white" />
-          </div>
-          <p className="text-sm text-slate-300">Free during early access</p>
-        </div>
-      </div>
-
-      {/* ── RIGHT PANEL ── */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-[#F8FAFC]">
-        <div className="w-full max-w-sm">
-
-          {/* mobile logo */}
-          <div className="md:hidden flex items-center justify-center gap-2.5 mb-10">
-            <div className="w-8 h-8 bg-amber-500 rounded-xl flex items-center justify-center shadow-md">
-              <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="font-bold text-slate-800 text-lg">whatismybill.today</span>
-          </div>
-
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">Create your account</h2>
-          <p className="text-slate-500 text-sm mb-8">
+        {/* card */}
+        <div className="bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md p-6">
+          <h2 className="text-base font-semibold text-[var(--wm-t1)] mb-1">Create your account</h2>
+          <p className="text-sm text-[var(--wm-t3)] mb-6">
             Free during early access. No credit card needed.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* name */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-1.5">
                 Full name
               </label>
               <input
@@ -146,13 +97,13 @@ export default function SignupPage() {
                 required
                 placeholder="Jane Smith"
                 autoComplete="name"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none text-sm text-slate-900 placeholder:text-slate-400 transition-all"
+                className="w-full bg-[var(--wm-bg)] border border-[var(--wm-border)] rounded-md px-3 py-2 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors"
               />
             </div>
 
             {/* email */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-1.5">
                 Email
               </label>
               <input
@@ -162,13 +113,13 @@ export default function SignupPage() {
                 required
                 placeholder="you@example.com"
                 autoComplete="email"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none text-sm text-slate-900 placeholder:text-slate-400 transition-all"
+                className="w-full bg-[var(--wm-bg)] border border-[var(--wm-border)] rounded-md px-3 py-2 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors"
               />
             </div>
 
             {/* password */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-1.5">
                 Password
               </label>
               <div className="relative">
@@ -179,12 +130,12 @@ export default function SignupPage() {
                   required
                   placeholder="Create a password"
                   autoComplete="new-password"
-                  className="w-full px-3.5 py-2.5 pr-10 rounded-xl border border-slate-300 bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 outline-none text-sm text-slate-900 placeholder:text-slate-400 transition-all"
+                  className="w-full bg-[var(--wm-bg)] border border-[var(--wm-border)] rounded-md px-3 py-2 pr-10 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--wm-t3)] hover:text-[var(--wm-t2)] transition-colors"
                   tabIndex={-1}
                 >
                   {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -195,7 +146,7 @@ export default function SignupPage() {
 
             {/* error */}
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-100 px-4 py-3 rounded-xl">
+              <div className="bg-[var(--wm-red-dim)] border border-[var(--wm-red-dim)] text-[var(--wm-red-text)] rounded-md px-4 py-3 text-sm">
                 {error}
               </div>
             )}
@@ -204,11 +155,11 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-60 disabled:cursor-not-allowed text-white py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-amber-500/30 mt-2"
+              className="w-full flex items-center justify-center gap-2 bg-[#e8a838] hover:bg-[#d4993a] disabled:opacity-60 disabled:cursor-not-allowed text-black py-2 rounded-md font-semibold text-sm transition-colors mt-2"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-[rgba(255,255,255,0.20)] border-t-white rounded-full animate-spin" />
                   Creating account…
                 </span>
               ) : (
@@ -217,19 +168,19 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-slate-400 mt-4 leading-relaxed">
+          <p className="text-center text-xs text-[var(--wm-t4)] mt-4 leading-relaxed">
             By creating an account you agree to our{" "}
-            <span className="text-slate-500 underline cursor-pointer">Terms of Service</span> and{" "}
-            <span className="text-slate-500 underline cursor-pointer">Privacy Policy</span>.
-          </p>
-
-          <p className="text-center text-sm text-slate-500 mt-5">
-            Already have an account?{" "}
-            <Link href="/login" className="text-amber-600 font-semibold hover:text-amber-700 transition-colors">
-              Sign in
-            </Link>
+            <span className="text-[var(--wm-t3)] underline cursor-pointer">Terms of Service</span> and{" "}
+            <span className="text-[var(--wm-t3)] underline cursor-pointer">Privacy Policy</span>.
           </p>
         </div>
+
+        <p className="text-center text-sm text-[var(--wm-t3)] mt-5">
+          Already have an account?{" "}
+          <Link href="/login" className="text-[#e8a838] hover:text-[#d4993a] font-semibold transition-colors">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );

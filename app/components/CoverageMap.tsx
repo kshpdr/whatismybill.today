@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTheme } from "next-themes";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { TransformWrapper, TransformComponent, useTransformContext } from "react-zoom-pan-pinch";
 import { buildCountyCoverage, type CountyCoverageState, type UtilityType } from "@/lib/coverage";
@@ -26,18 +27,17 @@ function getPrimaryColor(utilities: UtilityType[]): string {
   if (utilities.includes("electricity")) return UTILITY_COLORS.electricity;
   if (utilities.includes("gas"))         return UTILITY_COLORS.gas;
   if (utilities.length > 0)             return UTILITY_COLORS[utilities[0]];
-  return "#ffffff";
+  return "#888888";
 }
 
-function getFill(state: CountyCoverageState | undefined): string {
-  if (!state || state.coverage === "none") return "rgba(255,255,255,0.03)";
+function getFill(state: CountyCoverageState | undefined, dark: boolean): string {
+  if (!state || state.coverage === "none") return dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)";
   const color = getPrimaryColor(state.utilities);
-  // verified → solid; might work (unverified) → faint
   return state.verified ? color + "99" : color + "22";
 }
 
-function getHoverFill(state: CountyCoverageState | undefined): string {
-  if (!state || state.coverage === "none") return "rgba(255,255,255,0.07)";
+function getHoverFill(state: CountyCoverageState | undefined, dark: boolean): string {
+  if (!state || state.coverage === "none") return dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)";
   const color = getPrimaryColor(state.utilities);
   return state.verified ? color + "bb" : color + "44";
 }
@@ -49,6 +49,8 @@ type TooltipState = {
 } | null;
 
 export default function CoverageMap() {
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme !== "light";
   const [tooltip, setTooltip] = useState<TooltipState>(null);
   const [hoveredFips, setHoveredFips] = useState<string | null>(null);
 
@@ -73,10 +75,12 @@ export default function CoverageMap() {
     setTooltip(null);
   }, []);
 
+  const borderColor = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+
   return (
     <div className="relative w-full">
       {/* Map */}
-      <div className="w-full bg-[#0f0f0f] border border-[rgba(255,255,255,0.07)] rounded-md overflow-hidden">
+      <div className="w-full bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md overflow-hidden">
         <TransformWrapper
           minScale={1}
           maxScale={12}
@@ -92,6 +96,8 @@ export default function CoverageMap() {
               hoveredFips={hoveredFips}
               onMove={handleMoveByFips}
               onLeave={handleLeave}
+              dark={dark}
+              borderColor={borderColor}
             />
           </TransformComponent>
         </TransformWrapper>
@@ -104,43 +110,46 @@ export default function CoverageMap() {
             className="inline-block w-2.5 h-2.5 rounded-sm"
             style={{ backgroundColor: UTILITY_COLORS.electricity + "99" }}
           />
-          <span className="text-xs text-[rgba(255,255,255,0.55)]">Verified</span>
+          <span className="text-xs text-[var(--wm-t2)]">Verified</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span
             className="inline-block w-2.5 h-2.5 rounded-sm"
-            style={{ backgroundColor: UTILITY_COLORS.electricity + "22", border: "1px solid rgba(255,255,255,0.08)" }}
+            style={{ backgroundColor: UTILITY_COLORS.electricity + "22", border: `1px solid ${borderColor}` }}
           />
-          <span className="text-xs text-[rgba(255,255,255,0.55)]">Might work</span>
+          <span className="text-xs text-[var(--wm-t2)]">Might work</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.07)]" />
-          <span className="text-xs text-[rgba(255,255,255,0.55)]">No parser</span>
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-sm"
+            style={{ backgroundColor: dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.04)", border: `1px solid ${borderColor}` }}
+          />
+          <span className="text-xs text-[var(--wm-t2)]">No parser</span>
         </div>
         <div className="ml-auto flex gap-x-3">
           {(Object.entries(UTILITY_COLORS) as [UtilityType, string][]).map(([util, color]) => (
             <div key={util} className="flex items-center gap-1">
               <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-xs text-[rgba(255,255,255,0.30)]">{UTILITY_LABELS[util]}</span>
+              <span className="text-xs text-[var(--wm-t3)]">{UTILITY_LABELS[util]}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Tooltip */}
-      {tooltip && <CountyTooltip tooltip={tooltip} />}
+      {tooltip && <CountyTooltip tooltip={tooltip} dark={dark} />}
     </div>
   );
 }
 
 function ScaledMap({
-  hoveredFips,
-  onMove,
-  onLeave,
+  hoveredFips, onMove, onLeave, dark, borderColor,
 }: {
   hoveredFips: string | null;
   onMove: (fips: string, name: string, evt: React.MouseEvent) => void;
   onLeave: () => void;
+  dark: boolean;
+  borderColor: string;
 }) {
   const { transformState } = useTransformContext();
   const strokeWidth = 0.5 / transformState.scale;
@@ -159,15 +168,15 @@ function ScaledMap({
             .map((geo) => {
               const fips = geo.id.toString().padStart(5, "0");
               const state = countyCoverage.get(fips);
-              const fill = getFill(state);
-              const hoverFill = getHoverFill(state);
+              const fill = getFill(state, dark);
+              const hoverFill = getHoverFill(state, dark);
 
               return (
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill={fill}
-                  stroke="rgba(255,255,255,0.08)"
+                  fill={hoveredFips === fips ? hoverFill : fill}
+                  stroke={borderColor}
                   strokeWidth={strokeWidth}
                   style={{
                     default: { fill, outline: "none" },
@@ -187,7 +196,7 @@ function ScaledMap({
   );
 }
 
-function CountyTooltip({ tooltip }: { tooltip: NonNullable<TooltipState> }) {
+function CountyTooltip({ tooltip, dark }: { tooltip: NonNullable<TooltipState>; dark: boolean }) {
   const { x, y, county } = tooltip;
 
   return (
@@ -195,9 +204,9 @@ function CountyTooltip({ tooltip }: { tooltip: NonNullable<TooltipState> }) {
       className="fixed z-50 pointer-events-none"
       style={{ left: x + 14, top: y - 10 }}
     >
-      <div className="bg-[#1a1a1a] border border-[rgba(255,255,255,0.12)] rounded-md p-3 min-w-[190px]">
+      <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md p-3 min-w-[190px]">
         <div className="flex items-center justify-between gap-3 mb-2">
-          <span className="text-sm text-[rgba(255,255,255,0.90)]">
+          <span className="text-sm text-[var(--wm-t1)]">
             {county.name} County
           </span>
           {county.coverage !== "none" && (
@@ -205,8 +214,8 @@ function CountyTooltip({ tooltip }: { tooltip: NonNullable<TooltipState> }) {
               className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"
               style={
                 county.verified
-                  ? { color: "#4ade80", backgroundColor: "rgba(74,222,128,0.10)" }
-                  : { color: "rgba(255,255,255,0.40)", backgroundColor: "rgba(255,255,255,0.06)" }
+                  ? { color: "var(--wm-green-text)", backgroundColor: "var(--wm-green-dim)" }
+                  : { color: "var(--wm-t3)", backgroundColor: "var(--wm-border-sub)" }
               }
             >
               {county.verified ? "Verified" : "Might work"}
@@ -215,15 +224,15 @@ function CountyTooltip({ tooltip }: { tooltip: NonNullable<TooltipState> }) {
         </div>
 
         {county.coverage === "none" ? (
-          <div className="text-xs text-[rgba(255,255,255,0.30)]">No parser available</div>
+          <div className="text-xs text-[var(--wm-t3)]">No parser available</div>
         ) : (
           <div className="space-y-2">
             {county.providers.map((p) => (
               <div key={p.name}>
-                <div className="text-xs text-[rgba(255,255,255,0.40)] mb-1">
+                <div className="text-xs text-[var(--wm-t2)] mb-1">
                   {p.name}
                   {p.partial && (
-                    <span className="ml-1 text-[rgba(255,255,255,0.25)]">(cities only)</span>
+                    <span className="ml-1 text-[var(--wm-t3)]">(cities only)</span>
                   )}
                 </div>
                 <div className="flex gap-1.5 flex-wrap">

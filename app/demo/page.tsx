@@ -5,5 +5,5 @@ import { redirect } from "next/navigation";
  * Use /demo in links (login, marketing) so demo mode survives as a bookmarkable path.
  */
 export default function DemoPage() {
-  redirect("/?demo=1");
+  redirect("/dashboard?demo=1");
 }

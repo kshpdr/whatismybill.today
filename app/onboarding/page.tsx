@@ -34,10 +34,10 @@ function ProgressDots({ step }: { step: Step }) {
           key={i}
           className={`rounded-full transition-all duration-300 ${
             i === stepIndex
-              ? "w-6 h-2 bg-amber-500"
+              ? "w-6 h-2 bg-[#e8a838]"
               : i < stepIndex
-              ? "w-2 h-2 bg-amber-300"
-              : "w-2 h-2 bg-slate-200"
+              ? "w-2 h-2 bg-[#e8a838]"
+              : "w-2 h-2 bg-[rgba(255,255,255,0.12)]"
           }`}
         />
       ))}
@@ -74,10 +74,10 @@ function InviteCodeDisplay({ code }: { code: string }) {
           <div
             key={i}
             className={`
-              w-11 h-14 rounded-xl border-2 flex items-center justify-center
-              text-xl font-bold font-mono tracking-wider
+              w-11 h-14 rounded-md border flex items-center justify-center
+              text-lg font-mono
               ${i === 2 ? "mr-2" : ""}
-              bg-amber-50 border-amber-200 text-amber-800
+              bg-[var(--wm-card)] border-[var(--wm-border)] text-[var(--wm-t1)]
             `}
           >
             {char}
@@ -87,11 +87,11 @@ function InviteCodeDisplay({ code }: { code: string }) {
       <div className="flex items-center justify-center gap-3">
         <button
           onClick={handleCopy}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-md border border-[var(--wm-border)] text-sm font-medium text-[var(--wm-t2)] hover:bg-[var(--wm-hover)] transition-colors"
         >
           {copied ? (
             <>
-              <Check size={14} className="text-emerald-500" />
+              <Check size={14} className="text-[var(--wm-green-text)]" />
               Copied!
             </>
           ) : (
@@ -104,7 +104,7 @@ function InviteCodeDisplay({ code }: { code: string }) {
         {typeof navigator !== "undefined" && "share" in navigator && (
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-md bg-[#e8a838] text-black text-sm font-semibold hover:bg-[#d4993a] transition-colors"
           >
             Share invite
           </button>
@@ -176,14 +176,11 @@ function CodeInput({
           onKeyDown={(e) => handleKeyDown(i, e)}
           onPaste={handlePaste}
           className={`
-            w-11 h-14 rounded-xl border-2 text-center text-xl font-bold font-mono
-            transition-all outline-none
+            w-11 h-14 rounded-md border text-center font-mono text-lg
+            transition-colors outline-none
             ${i === 2 ? "mr-2" : ""}
-            ${char.trim()
-              ? "border-amber-400 bg-amber-50 text-amber-800"
-              : "border-slate-200 bg-white text-slate-800"
-            }
-            focus:border-amber-500 focus:ring-2 focus:ring-amber-100
+            bg-[var(--wm-bg)] border-[var(--wm-border)] text-[var(--wm-t1)]
+            focus:border-[#e8a838]
           `}
         />
       ))}
@@ -195,19 +192,19 @@ function CodeInput({
 
 function UtilityIcons() {
   return (
-    <div className="flex items-center justify-center gap-3 text-slate-400">
+    <div className="flex items-center justify-center gap-3 text-[var(--wm-t3)]">
       <div className="flex items-center gap-1.5">
-        <Zap size={14} className="text-amber-400" />
+        <Zap size={14} className="text-[#d4993a]" />
         <span className="text-xs">Electricity</span>
       </div>
       <span>·</span>
       <div className="flex items-center gap-1.5">
-        <Flame size={14} className="text-orange-400" />
+        <Flame size={14} className="text-[#6892b0]" />
         <span className="text-xs">Gas</span>
       </div>
       <span>·</span>
       <div className="flex items-center gap-1.5">
-        <Droplets size={14} className="text-blue-400" />
+        <Droplets size={14} className="text-[#47998e]" />
         <span className="text-xs">Water</span>
       </div>
     </div>
@@ -290,32 +287,30 @@ export default function OnboardingPage() {
   }
 
   function handleGoToDashboard() {
-    router.push("/");
+    router.push("/dashboard");
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-white flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[var(--wm-bg)] flex flex-col items-center justify-center px-4 py-12">
       {/* Logo */}
       <div className="mb-8 flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-          <Zap size={16} className="text-white" strokeWidth={2.5} />
-        </div>
-        <span className="text-slate-800 font-semibold text-sm tracking-tight">
+        <Zap size={16} className="text-[#e8a838]" strokeWidth={2.5} />
+        <span className="text-[var(--wm-t1)] font-mono text-sm tracking-tight">
           whatismybill.today
         </span>
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md p-6">
         {/* Progress */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2 h-8">
             {(step === "create" || step === "join") && (
               <button
                 onClick={() => { setStep("choice"); setError(null); }}
-                className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-600 transition-colors"
+                className="flex items-center gap-1 text-sm text-[var(--wm-t2)] hover:text-[var(--wm-t1)] transition-colors"
               >
                 <ChevronLeft size={16} />
                 Back
@@ -329,10 +324,10 @@ export default function OnboardingPage() {
         {step === "choice" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">
+              <h1 className="text-2xl font-semibold text-[var(--wm-t1)]">
                 Welcome, {userName}!
               </h1>
-              <p className="text-slate-500 mt-1 text-sm">
+              <p className="text-[var(--wm-t2)] mt-1 text-sm">
                 Let&apos;s set up your first home to start tracking bills.
               </p>
             </div>
@@ -340,46 +335,46 @@ export default function OnboardingPage() {
             <div className="space-y-3">
               <button
                 onClick={() => setStep("create")}
-                className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 transition-all group"
+                className="w-full text-left p-4 rounded-md border border-[var(--wm-border)] hover:border-[rgba(255,255,255,0.15)] hover:bg-[var(--wm-hover)] bg-[var(--wm-card)] transition-colors group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-                    <Home size={18} className="text-amber-600" />
+                  <div className="w-10 h-10 rounded-md bg-[var(--wm-hover)] flex items-center justify-center">
+                    <Home size={18} className="text-[var(--wm-t2)]" />
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-800 text-sm">
+                    <div className="font-semibold text-[var(--wm-t1)] text-sm">
                       Create a new home
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
+                    <div className="text-xs text-[var(--wm-t2)] mt-0.5">
                       You&apos;ll be the owner — invite others with a code
                     </div>
                   </div>
                   <ArrowRight
                     size={16}
-                    className="ml-auto text-slate-300 group-hover:text-amber-500 transition-colors"
+                    className="ml-auto text-[var(--wm-t3)] group-hover:text-[#e8a838] transition-colors"
                   />
                 </div>
               </button>
 
               <button
                 onClick={() => setStep("join")}
-                className="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all group"
+                className="w-full text-left p-4 rounded-md border border-[var(--wm-border)] hover:border-[rgba(255,255,255,0.15)] hover:bg-[var(--wm-hover)] bg-[var(--wm-card)] transition-colors group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                    <Users size={18} className="text-blue-600" />
+                  <div className="w-10 h-10 rounded-md bg-[var(--wm-hover)] flex items-center justify-center">
+                    <Users size={18} className="text-[var(--wm-t2)]" />
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-800 text-sm">
+                    <div className="font-semibold text-[var(--wm-t1)] text-sm">
                       Join an existing home
                     </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
+                    <div className="text-xs text-[var(--wm-t2)] mt-0.5">
                       Enter the 6-character code from your home&apos;s owner
                     </div>
                   </div>
                   <ArrowRight
                     size={16}
-                    className="ml-auto text-slate-300 group-hover:text-blue-400 transition-colors"
+                    className="ml-auto text-[var(--wm-t3)] group-hover:text-[#e8a838] transition-colors"
                   />
                 </div>
               </button>
@@ -393,10 +388,10 @@ export default function OnboardingPage() {
         {step === "create" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">
+              <h1 className="text-2xl font-semibold text-[var(--wm-t1)]">
                 Name your home
               </h1>
-              <p className="text-slate-500 mt-1 text-sm">
+              <p className="text-[var(--wm-t2)] mt-1 text-sm">
                 A nickname makes it easy to identify — especially if you have
                 multiple properties.
               </p>
@@ -404,8 +399,8 @@ export default function OnboardingPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Home nickname <span className="text-red-400">*</span>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-1.5">
+                  Home nickname <span className="text-[var(--wm-red-text)]">*</span>
                 </label>
                 <input
                   type="text"
@@ -413,15 +408,15 @@ export default function OnboardingPage() {
                   value={nickname}
                   onChange={(e) => { setNickname(e.target.value); setError(null); }}
                   onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"
+                  className="w-full bg-[var(--wm-bg)] border border-[var(--wm-border)] rounded-md px-3 py-2 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-1.5">
                   Address{" "}
-                  <span className="text-slate-400 font-normal">(optional)</span>
+                  <span className="text-[var(--wm-t3)] normal-case font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -429,12 +424,12 @@ export default function OnboardingPage() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition"
+                  className="w-full bg-[var(--wm-bg)] border border-[var(--wm-border)] rounded-md px-3 py-2 text-sm text-[var(--wm-t1)] placeholder:text-[var(--wm-t3)] focus:border-[#e8a838] focus:outline-none transition-colors"
                 />
               </div>
 
               {error && (
-                <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">
+                <p className="text-[var(--wm-red-text)] text-xs mt-1">
                   {error}
                 </p>
               )}
@@ -442,10 +437,10 @@ export default function OnboardingPage() {
               <button
                 onClick={handleCreate}
                 disabled={loading || !nickname.trim()}
-                className="w-full py-3 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-2 rounded-md bg-[#e8a838] text-black font-semibold text-sm hover:bg-[#d4993a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
                     Create home
@@ -455,7 +450,7 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            <p className="text-center text-xs text-slate-400">
+            <p className="text-center text-xs text-[var(--wm-t3)]">
               You&apos;ll be the owner. You can invite members after.
             </p>
           </div>
@@ -465,13 +460,13 @@ export default function OnboardingPage() {
         {step === "join" && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">
+              <h1 className="text-2xl font-semibold text-[var(--wm-t1)]">
                 Enter invite code
               </h1>
-              <p className="text-slate-500 mt-1 text-sm">
+              <p className="text-[var(--wm-t2)] mt-1 text-sm">
                 Ask your home&apos;s owner for the 6-character code. It looks
                 like{" "}
-                <span className="font-mono font-semibold text-amber-600">
+                <span className="font-mono font-semibold text-[#e8a838]">
                   A7K3M2
                 </span>
                 .
@@ -482,7 +477,7 @@ export default function OnboardingPage() {
               <CodeInput value={joinCode} onChange={(v) => { setJoinCode(v); setError(null); }} />
 
               {error && (
-                <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2 text-center">
+                <p className="text-[var(--wm-red-text)] text-xs mt-1 text-center">
                   {error}
                 </p>
               )}
@@ -490,10 +485,10 @@ export default function OnboardingPage() {
               <button
                 onClick={handleJoin}
                 disabled={loading || joinCode.trim().length < 6}
-                className="w-full py-3 rounded-xl bg-blue-500 text-white font-semibold text-sm hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-2 rounded-md bg-[#e8a838] text-black font-semibold text-sm hover:bg-[#d4993a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
                     Join home
@@ -503,7 +498,7 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            <p className="text-center text-xs text-slate-400">
+            <p className="text-center text-xs text-[var(--wm-t3)]">
               Don&apos;t have a code? Ask the home owner to share it from their
               settings.
             </p>
@@ -514,22 +509,22 @@ export default function OnboardingPage() {
         {step === "success-create" && (
           <div className="space-y-6">
             <div className="text-center space-y-1">
-              <div className="text-4xl mb-3">🏠</div>
-              <h1 className="text-2xl font-bold text-slate-900">
+              <div className="text-4xl mb-3 text-[var(--wm-green-text)]">&#10003;</div>
+              <h1 className="text-2xl font-semibold text-[var(--wm-t1)]">
                 {nickname || "Your home"} is ready!
               </h1>
-              <p className="text-slate-500 text-sm">
+              <p className="text-[var(--wm-t2)] text-sm">
                 You&apos;re the owner. Share this code to invite household
                 members.
               </p>
             </div>
 
-            <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
-              <p className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md p-5 space-y-4">
+              <p className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)]">
                 Invite code
               </p>
               <InviteCodeDisplay code={createdCode} />
-              <p className="text-center text-xs text-slate-400">
+              <p className="text-center text-xs text-[var(--wm-t3)]">
                 Anyone with this code can join your home. You can rotate it
                 anytime in settings.
               </p>
@@ -537,13 +532,13 @@ export default function OnboardingPage() {
 
             <button
               onClick={handleGoToDashboard}
-              className="w-full py-3 rounded-xl bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2 rounded-md bg-[#e8a838] text-black font-semibold text-sm hover:bg-[#d4993a] transition-colors flex items-center justify-center gap-2"
             >
               Go to dashboard
               <ArrowRight size={16} />
             </button>
 
-            <p className="text-center text-xs text-slate-400">
+            <p className="text-center text-xs text-[var(--wm-t3)]">
               You can share the code later from Settings → Members.
             </p>
           </div>
@@ -553,21 +548,21 @@ export default function OnboardingPage() {
         {step === "success-join" && (
           <div className="space-y-6">
             <div className="text-center space-y-1">
-              <div className="text-4xl mb-3">🎉</div>
-              <h1 className="text-2xl font-bold text-slate-900">
+              <div className="text-4xl mb-3 text-[var(--wm-green-text)]">&#10003;</div>
+              <h1 className="text-2xl font-semibold text-[var(--wm-t1)]">
                 You joined
               </h1>
-              <p className="text-xl font-semibold text-amber-600">
+              <p className="text-xl font-semibold text-[#e8a838]">
                 {joinedName}
               </p>
-              <p className="text-slate-500 text-sm pt-1">
+              <p className="text-[var(--wm-t2)] text-sm pt-1">
                 You can now view bills and upload new ones for this home.
               </p>
             </div>
 
-            <div className="bg-blue-50 rounded-2xl p-4 flex items-start gap-3">
-              <Users size={16} className="text-blue-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-700">
+            <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md p-4 flex items-start gap-3">
+              <Users size={16} className="text-[var(--wm-t2)] shrink-0 mt-0.5" />
+              <p className="text-sm text-[var(--wm-t2)]">
                 As a member, you can upload bills and view the dashboard.
                 Only the owner can invite others or manage settings.
               </p>
@@ -575,7 +570,7 @@ export default function OnboardingPage() {
 
             <button
               onClick={handleGoToDashboard}
-              className="w-full py-3 rounded-xl bg-blue-500 text-white font-semibold text-sm hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2 rounded-md bg-[#e8a838] text-black font-semibold text-sm hover:bg-[#d4993a] transition-colors flex items-center justify-center gap-2"
             >
               Go to dashboard
               <ArrowRight size={16} />
