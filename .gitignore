@@ -56,3 +56,6 @@ bills/
 *.tsbuildinfo
 next-env.d.ts
 test-bills/
+
+# backend compiled output
+backend/dist/
