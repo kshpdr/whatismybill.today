@@ -49,7 +49,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    if: vars.DEPLOY_ENABLED == 'true'
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -59,7 +59,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
           script: |
-            cd ~/app
+            cd ~/whatismybill.today
             git pull
             docker compose -f docker-compose.ghcr.yml pull backend frontend
             docker compose -f docker-compose.ghcr.yml up -d --no-deps backend frontend
