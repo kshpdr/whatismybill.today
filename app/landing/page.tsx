@@ -10,7 +10,6 @@ export default function LandingPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             whatismybill.today
           </h1>
-          <p className="text-[10px] text-[rgba(255,255,255,0.20)] font-mono">v2026-03-28</p>
           <p className="text-[rgba(255,255,255,0.55)] text-sm max-w-lg">
             Upload your utility bills. We parse them automatically and show you
             exactly what you&apos;re paying for — broken down by charge,
