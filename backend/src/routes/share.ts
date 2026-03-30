@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { db } from "../db/index.js";
-import { shareLinks, households, householdMembers, bills } from "../db/schema.js";
+import { shareLinks, households, householdMembers, bills, SHARE_VISIBILITY_DEFAULTS } from "../db/schema.js";
+import type { ShareVisibilityConfig } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
 
 type Vars = { Variables: { userId: string } };
@@ -56,13 +57,19 @@ router.post("/households/:id/share", requireAuth, async (c) => {
     return c.json({ error: "Not a member of this household" }, 403);
   }
 
-  type Body = { label?: string; expiryDays?: number };
+  type Body = { label?: string; expiryDays?: number; visibilityConfig?: Partial<ShareVisibilityConfig> };
   const body: Body = await c.req.json<Body>().catch(() => ({}));
   const label      = body.label?.trim() || undefined;
   const expiryDays = body.expiryDays ?? 90;
   const expiresAt  = expiryDays > 0
     ? new Date(Date.now() + expiryDays * 86_400_000)
     : undefined;
+
+  // Merge provided visibility overrides with defaults
+  const visibilityConfig: ShareVisibilityConfig = {
+    ...SHARE_VISIBILITY_DEFAULTS,
+    ...(body.visibilityConfig ?? {}),
+  };
 
   const token = generateToken();
   const [link] = await db.insert(shareLinks).values({
@@ -71,13 +78,15 @@ router.post("/households/:id/share", requireAuth, async (c) => {
     createdBy: userId,
     label,
     expiresAt,
+    visibilityConfig,
   }).returning();
 
   return c.json({
-    token:     link.token,
-    label:     link.label ?? null,
-    expiresAt: link.expiresAt?.toISOString() ?? null,
-    createdAt: link.createdAt.toISOString(),
+    token:            link.token,
+    label:            link.label ?? null,
+    expiresAt:        link.expiresAt?.toISOString() ?? null,
+    createdAt:        link.createdAt.toISOString(),
+    visibilityConfig: link.visibilityConfig,
   }, 201);
 });
 
@@ -93,19 +102,21 @@ router.get("/households/:id/share", requireAuth, async (c) => {
 
   const rows = await db
     .select({
-      token:     shareLinks.token,
-      label:     shareLinks.label,
-      expiresAt: shareLinks.expiresAt,
-      createdAt: shareLinks.createdAt,
+      token:            shareLinks.token,
+      label:            shareLinks.label,
+      expiresAt:        shareLinks.expiresAt,
+      createdAt:        shareLinks.createdAt,
+      visibilityConfig: shareLinks.visibilityConfig,
     })
     .from(shareLinks)
     .where(eq(shareLinks.householdId, householdId));
 
   return c.json(rows.map((l) => ({
-    token:     l.token,
-    label:     l.label ?? null,
-    expiresAt: l.expiresAt?.toISOString() ?? null,
-    createdAt: l.createdAt.toISOString(),
+    token:            l.token,
+    label:            l.label ?? null,
+    expiresAt:        l.expiresAt?.toISOString() ?? null,
+    createdAt:        l.createdAt.toISOString(),
+    visibilityConfig: l.visibilityConfig ?? SHARE_VISIBILITY_DEFAULTS,
   })));
 });
 
@@ -147,16 +158,34 @@ router.get("/share/:token", async (c) => {
     .where(eq(households.id, link.householdId)).limit(1);
   if (!household) return c.json({ error: "Household not found" }, 404);
 
-  const billRows = await db.select().from(bills)
+  const allBillRows = await db.select().from(bills)
     .where(eq(bills.householdId, link.householdId));
+
+  const visibilityConfig: ShareVisibilityConfig = {
+    ...SHARE_VISIBILITY_DEFAULTS,
+    ...(link.visibilityConfig ?? {}),
+  };
+
+  // Apply data filters server-side so hidden data is never transmitted
+  const allowedTypes = new Set(visibilityConfig.visibleUtilityTypes);
+  const cutoffDate = visibilityConfig.maxMonths != null
+    ? new Date(Date.now() - visibilityConfig.maxMonths * 30 * 86_400_000).toISOString().slice(0, 10)
+    : null;
+
+  const billRows = allBillRows.filter((b) => {
+    if (!allowedTypes.has(b.utilityType as "electricity" | "gas" | "water")) return false;
+    if (cutoffDate && b.billingPeriodEnd < cutoffDate) return false;
+    return true;
+  });
 
   return c.json({
     household: { nickname: household.nickname, address: household.address ?? null },
     bills:     billRows.map(formatBill),
     shareLink: {
-      label:     link.label ?? null,
-      expiresAt: link.expiresAt?.toISOString() ?? null,
-      createdAt: link.createdAt.toISOString(),
+      label:            link.label ?? null,
+      expiresAt:        link.expiresAt?.toISOString() ?? null,
+      createdAt:        link.createdAt.toISOString(),
+      visibilityConfig,
     },
   });
 });
