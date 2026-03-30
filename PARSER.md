@@ -78,7 +78,7 @@ PGEBill
 
 ## Schema: Bill (app data model)
 
-One `Bill` = one utility type for one period. Stored in Firestore. Used by the dashboard.
+One `Bill` = one utility type for one period. Stored in PostgreSQL. Used by the dashboard.
 
 ```
 Bill
@@ -90,9 +90,9 @@ Bill
  ├── usage                  kWh | Therms | CCF
  ├── usageUnit              "kWh" | "Therms" | "CCF"
  ├── unitPrice              $/unit (effective)
- ├── charges[]              { label, amount } — pie chart data
- ├── storageRef             Firebase Storage path to original PDF
- ├── uploadedBy?            uid
+ ├── charges[]              { label, amount } — JSONB, pie chart data
+ ├── storageRef?            path to PDF on disk (nullable)
+ ├── uploadedBy?            userId
  ├── parseStatus            "success" | "failed" | "encoding_error"
  └── uploadedAt             ISO timestamp
 ```
@@ -139,10 +139,10 @@ import { pgeToBills } from "@/lib/parsers/adapter";
 
 const [elecBill, gasBill] = pgeToBills(pge, {
   householdId: "hh-123",
-  storageRef:  "households/hh-123/bills/2025-10.pdf",
-  uploadedBy:  user.uid,
+  storageRef:  "/data/bills/hh-123/2025-10.pdf",
+  uploadedBy:  user.id,
 });
-// → store both in Firestore
+// → POST to backend API, stored in PostgreSQL
 ```
 
 ---
@@ -150,10 +150,10 @@ const [elecBill, gasBill] = pgeToBills(pge, {
 ## Dashboard data flow
 
 ```
-Firestore bills collection
+PostgreSQL bills table
     │
     ▼
-GET /api/bills?householdId=…          (backend — your separate API)
+GET /bills?householdId=…              backend/src/routes/bills.ts
     │
     ▼
 useBills(householdId)                 lib/use-bills.ts
@@ -163,7 +163,7 @@ useBills(householdId)                 lib/use-bills.ts
     └── deriveGasMonthly(bills)       → gas trend chart
 ```
 
-Each `Bill` in Firestore feeds directly into these derive functions — no further transformation needed.
+Each `Bill` record feeds directly into these derive functions — no further transformation needed.
 
 ---
 
