@@ -126,7 +126,7 @@ export default function CoverageMap() {
           />
           <span className="text-xs text-[var(--wm-t2)]">No parser</span>
         </div>
-        <div className="ml-auto flex gap-x-3">
+        <div className="ml-auto flex gap-x-3 max-sm:ml-0 max-sm:w-full max-sm:justify-end">
           {(Object.entries(UTILITY_COLORS) as [UtilityType, string][]).map(([util, color]) => (
             <div key={util} className="flex items-center gap-1">
               <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
