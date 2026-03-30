@@ -36,6 +36,20 @@ function ClientOnly({ children, height }: { children: React.ReactNode; height: s
 
 const C = { electricity: "#d4993a", gas: "#6892b0", water: "#47998e" };
 
+// ─── Visibility config ────────────────────────────────────────────────────────
+
+interface ShareVisibilityConfig {
+  showPdf:     boolean;
+  showCharges: boolean;
+  showUsage:   boolean;
+  showChart:   boolean;
+  showAddress: boolean;
+}
+
+const VISIBILITY_DEFAULTS: ShareVisibilityConfig = {
+  showPdf: true, showCharges: true, showUsage: true, showChart: true, showAddress: true,
+};
+
 // ─── Bill row ─────────────────────────────────────────────────────────────────
 
 function BillRow({ bill, token, onSelect }: { bill: Bill; token: string; onSelect: (b: Bill) => void }) {
@@ -65,7 +79,12 @@ function BillRow({ bill, token, onSelect }: { bill: Bill; token: string; onSelec
 
 // ─── Bill detail panel ────────────────────────────────────────────────────────
 
-function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; onClose: () => void }) {
+function BillDetailPanel({ bill, token, vis, onClose }: {
+  bill: Bill;
+  token: string;
+  vis: ShareVisibilityConfig;
+  onClose: () => void;
+}) {
   const [pdfLoading, setPdfLoading] = useState(false);
   const colors = [C.electricity, C.gas, C.water, "#a78bfa", "#fb923c", "#f472b6"];
 
@@ -82,6 +101,17 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
       setPdfLoading(false);
     }
   }
+
+  // Build KPI tiles depending on visibility
+  const kpiTiles = vis.showUsage
+    ? [
+        { label: "Total",                      value: fmt$(bill.totalAmount) },
+        { label: bill.usageUnit || "Usage",    value: bill.usage > 0 ? String(bill.usage) : "—" },
+        { label: `/${bill.usageUnit}`,         value: bill.unitPrice > 0 ? `$${bill.unitPrice.toFixed(3)}` : "—" },
+      ]
+    : [
+        { label: "Total", value: fmt$(bill.totalAmount) },
+      ];
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end md:flex-row">
@@ -101,12 +131,8 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
         </div>
         <div className="overflow-y-auto flex-1 p-5 space-y-5">
           {/* KPIs */}
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: "Total",    value: fmt$(bill.totalAmount) },
-              { label: bill.usageUnit || "Usage", value: bill.usage > 0 ? String(bill.usage) : "—" },
-              { label: `/${bill.usageUnit}`,  value: bill.unitPrice > 0 ? `$${bill.unitPrice.toFixed(3)}` : "—" },
-            ].map((k) => (
+          <div className={`grid gap-2 ${kpiTiles.length === 3 ? "grid-cols-3" : "grid-cols-1"}`}>
+            {kpiTiles.map((k) => (
               <div key={k.label} className="bg-[var(--wm-surface)] rounded-md p-3 text-center">
                 <p className="text-base font-mono text-[var(--wm-t1)] tabular-nums">{k.value}</p>
                 <p className="text-[11px] text-[var(--wm-t3)] mt-0.5">{k.label}</p>
@@ -115,7 +141,7 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
           </div>
 
           {/* Charges */}
-          {bill.charges.length > 0 && (
+          {vis.showCharges && bill.charges.length > 0 && (
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--wm-t3)] mb-3">Charge Breakdown</h3>
               <div className="space-y-2.5">
@@ -141,21 +167,23 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
           )}
 
           {/* PDF */}
-          <div className="border border-[var(--wm-border)] rounded-md p-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-md bg-[var(--wm-surface)] border border-[var(--wm-border)] flex items-center justify-center shrink-0">
-                <FileText className="w-4 h-4 text-[var(--wm-t3)]" />
+          {vis.showPdf && (
+            <div className="border border-[var(--wm-border)] rounded-md p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-md bg-[var(--wm-surface)] border border-[var(--wm-border)] flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-[var(--wm-t3)]" />
+                </div>
+                <p className="text-sm text-[var(--wm-t2)]">Original PDF</p>
               </div>
-              <p className="text-sm text-[var(--wm-t2)]">Original PDF</p>
+              <button
+                onClick={handleViewPdf}
+                disabled={pdfLoading}
+                className="shrink-0 text-xs font-semibold text-[#e8a838] hover:text-[#d4993a] disabled:opacity-50 transition-colors"
+              >
+                {pdfLoading ? "Opening…" : "View →"}
+              </button>
             </div>
-            <button
-              onClick={handleViewPdf}
-              disabled={pdfLoading}
-              className="shrink-0 text-xs font-semibold text-[#e8a838] hover:text-[#d4993a] disabled:opacity-50 transition-colors"
-            >
-              {pdfLoading ? "Opening…" : "View →"}
-            </button>
-          </div>
+          )}
         </div>
       </aside>
     </div>
@@ -167,7 +195,12 @@ function BillDetailPanel({ bill, token, onClose }: { bill: Bill; token: string; 
 interface ShareData {
   household: { nickname: string; address: string | null };
   bills: Bill[];
-  shareLink: { label: string | null; expiresAt: string | null; createdAt: string };
+  shareLink: {
+    label:            string | null;
+    expiresAt:        string | null;
+    createdAt:        string;
+    visibilityConfig: ShareVisibilityConfig;
+  };
 }
 
 export default function SharePage() {
@@ -214,6 +247,7 @@ export default function SharePage() {
   if (!data) return null;
 
   const { household, bills: allBills, shareLink } = data;
+  const vis: ShareVisibilityConfig = { ...VISIBILITY_DEFAULTS, ...(shareLink.visibilityConfig ?? {}) };
   const monthlySpend = deriveMonthlySpend(allBills);
   const elecMonthly  = deriveElecMonthly(allBills);
   const gasMonthly   = deriveGasMonthly(allBills);
@@ -268,7 +302,7 @@ export default function SharePage() {
           </div>
           <div>
             <p className="text-sm text-[var(--wm-t1)] leading-none">{household.nickname}</p>
-            {household.address && <p className="text-[11px] text-[var(--wm-t3)] mt-0.5">{household.address}</p>}
+            {vis.showAddress && household.address && <p className="text-[11px] text-[var(--wm-t3)] mt-0.5">{household.address}</p>}
           </div>
         </div>
         <div className="flex items-center gap-1.5 bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md px-2.5 py-1 text-xs font-mono text-[var(--wm-t3)]">
@@ -333,7 +367,7 @@ export default function SharePage() {
         )}
 
         {/* Monthly chart */}
-        {monthlySpend.length > 1 && (
+        {vis.showChart && monthlySpend.length > 1 && (
           <div className="bg-[var(--wm-card)] border border-[var(--wm-border)] rounded-md p-4">
             <h2 className="text-sm text-[var(--wm-t1)] mb-1">Monthly Spending</h2>
             <p className="text-xs text-[var(--wm-t3)] mb-4">All utilities combined</p>
@@ -399,7 +433,7 @@ export default function SharePage() {
       </div>
 
       {selectedBill && (
-        <BillDetailPanel bill={selectedBill} token={token} onClose={() => setSelectedBill(null)} />
+        <BillDetailPanel bill={selectedBill} token={token} vis={vis} onClose={() => setSelectedBill(null)} />
       )}
     </div>
   );

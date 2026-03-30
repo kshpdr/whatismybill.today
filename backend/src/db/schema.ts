@@ -98,15 +98,35 @@ export const billsRelations = relations(bills, ({ one }) => ({
 // ─── Share links ──────────────────────────────────────────────────────────────
 // A share link lets anyone with the token view a household's bills read-only.
 
+export interface ShareVisibilityConfig {
+  showPdf:     boolean;  // allow viewing original PDF
+  showCharges: boolean;  // show charge breakdown line items
+  showUsage:   boolean;  // show usage amount and unit price
+  showChart:   boolean;  // show monthly spending chart
+  showAddress: boolean;  // show property address in header
+}
+
+export const SHARE_VISIBILITY_DEFAULTS: ShareVisibilityConfig = {
+  showPdf:     true,
+  showCharges: true,
+  showUsage:   true,
+  showChart:   true,
+  showAddress: true,
+};
+
 export const shareLinks = pgTable("share_links", {
-  token:       varchar("token",        { length: 64 }).primaryKey(),
-  householdId: uuid("household_id")
+  token:            varchar("token",        { length: 64 }).primaryKey(),
+  householdId:      uuid("household_id")
     .references(() => households.id, { onDelete: "cascade" })
     .notNull(),
-  createdBy:   uuid("created_by").references(() => users.id).notNull(),
-  label:       varchar("label",        { length: 100 }),   // e.g. "Landlord – John"
-  expiresAt:   timestamp("expires_at"),                     // null = never
-  createdAt:   timestamp("created_at").defaultNow().notNull(),
+  createdBy:        uuid("created_by").references(() => users.id).notNull(),
+  label:            varchar("label",        { length: 100 }),   // e.g. "Landlord – John"
+  expiresAt:        timestamp("expires_at"),                     // null = never
+  createdAt:        timestamp("created_at").defaultNow().notNull(),
+  visibilityConfig: jsonb("visibility_config")
+    .notNull()
+    .default(SHARE_VISIBILITY_DEFAULTS)
+    .$type<ShareVisibilityConfig>(),
 });
 
 export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
