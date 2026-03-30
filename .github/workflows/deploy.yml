@@ -36,7 +36,7 @@ jobs:
       - name: Build & push frontend
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./frontend
           push: true
           tags: ghcr.io/${{ github.repository }}/frontend:latest
           build-args: |
