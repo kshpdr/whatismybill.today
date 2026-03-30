@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft, Copy, Check, RotateCw, Crown, UserMinus,
-  Zap, Pencil, X, Trash2, LogOut, AlertTriangle, Users, Share2,
+  Zap, Flame, Droplets, Pencil, X, Trash2, LogOut, AlertTriangle, Users, Share2,
   Link, Shield, Plus, FileText, BarChart2, Gauge, MapPin, List,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -200,12 +200,15 @@ export default function SettingsPage() {
   const [showDanger, setShowDanger] = useState(false);
 
   // ── Share links ────────────────────────────────────────────────────────────
+  type UtilityType = "electricity" | "gas" | "water";
   interface ShareVisibilityConfig {
-    showPdf:     boolean;
-    showCharges: boolean;
-    showUsage:   boolean;
-    showChart:   boolean;
-    showAddress: boolean;
+    showPdf:             boolean;
+    showCharges:         boolean;
+    showUsage:           boolean;
+    showChart:           boolean;
+    showAddress:         boolean;
+    visibleUtilityTypes: UtilityType[];
+    maxMonths:           number | null;
   }
   interface ShareLinkRow {
     token:            string;
@@ -216,13 +219,26 @@ export default function SettingsPage() {
   }
   const DEFAULT_VISIBILITY: ShareVisibilityConfig = {
     showPdf: true, showCharges: true, showUsage: true, showChart: true, showAddress: true,
+    visibleUtilityTypes: ["electricity", "gas", "water"],
+    maxMonths: null,
   };
-  const VISIBILITY_OPTIONS: { key: keyof ShareVisibilityConfig; label: string; icon: React.ReactNode }[] = [
+  const VISIBILITY_OPTIONS: { key: keyof Pick<ShareVisibilityConfig, "showAddress"|"showChart"|"showUsage"|"showCharges"|"showPdf">; label: string; icon: React.ReactNode }[] = [
     { key: "showAddress", label: "Address",   icon: <MapPin    size={11} /> },
     { key: "showChart",   label: "Chart",     icon: <BarChart2 size={11} /> },
     { key: "showUsage",   label: "Usage",     icon: <Gauge     size={11} /> },
     { key: "showCharges", label: "Breakdown", icon: <List      size={11} /> },
     { key: "showPdf",     label: "PDF",       icon: <FileText  size={11} /> },
+  ];
+  const UTILITY_OPTIONS: { type: UtilityType; label: string; icon: React.ReactNode }[] = [
+    { type: "electricity", label: "Electricity", icon: <Zap      size={11} /> },
+    { type: "gas",         label: "Gas",         icon: <Flame    size={11} /> },
+    { type: "water",       label: "Water",       icon: <Droplets size={11} /> },
+  ];
+  const HISTORY_OPTIONS: { value: number | null; label: string }[] = [
+    { value: null, label: "All" },
+    { value: 12,   label: "12 mo" },
+    { value: 6,    label: "6 mo" },
+    { value: 3,    label: "3 mo" },
   ];
 
   const [shareLinks,      setShareLinks]      = useState<ShareLinkRow[]>([]);
@@ -558,7 +574,60 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              {/* Visibility toggles */}
+              {/* Utility type filter */}
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--wm-t3)]">Include utilities</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {UTILITY_OPTIONS.map(({ type, label, icon }) => {
+                    const on = shareVisibility.visibleUtilityTypes.includes(type);
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setShareVisibility((v) => ({
+                          ...v,
+                          visibleUtilityTypes: on
+                            ? v.visibleUtilityTypes.filter((t) => t !== type)
+                            : [...v.visibleUtilityTypes, type],
+                        }))}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
+                          on
+                            ? "bg-[var(--wm-amber-dim)] border-[rgba(232,168,56,0.30)] text-[#e8a838]"
+                            : "bg-[var(--wm-surface)] border-[var(--wm-border)] text-[var(--wm-t3)]"
+                        }`}
+                      >
+                        {icon}{label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* History limit */}
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--wm-t3)]">History</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {HISTORY_OPTIONS.map(({ value, label }) => {
+                    const on = shareVisibility.maxMonths === value;
+                    return (
+                      <button
+                        key={String(value)}
+                        type="button"
+                        onClick={() => setShareVisibility((v) => ({ ...v, maxMonths: value }))}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
+                          on
+                            ? "bg-[var(--wm-amber-dim)] border-[rgba(232,168,56,0.30)] text-[#e8a838]"
+                            : "bg-[var(--wm-surface)] border-[var(--wm-border)] text-[var(--wm-t3)]"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Section visibility toggles */}
               <div className="space-y-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--wm-t3)]">Show in view</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -591,8 +660,14 @@ export default function SettingsPage() {
             ) : (
               <div className="space-y-2">
                 {shareLinks.map((l) => {
-                  const vis = l.visibilityConfig ?? DEFAULT_VISIBILITY;
-                  const hiddenItems = VISIBILITY_OPTIONS.filter(({ key }) => !vis[key]).map(({ label }) => label);
+                  const vis = { ...DEFAULT_VISIBILITY, ...(l.visibilityConfig ?? {}) };
+                  const hiddenSections = VISIBILITY_OPTIONS.filter(({ key }) => !vis[key]).map(({ label }) => label);
+                  const allTypes: UtilityType[] = ["electricity", "gas", "water"];
+                  const hiddenTypes = allTypes.filter((t) => !vis.visibleUtilityTypes.includes(t));
+                  const summaryParts: string[] = [];
+                  if (hiddenTypes.length > 0) summaryParts.push(`No ${hiddenTypes.join("/")}`);
+                  if (vis.maxMonths != null) summaryParts.push(`Last ${vis.maxMonths} mo`);
+                  if (hiddenSections.length > 0) summaryParts.push(`Hidden: ${hiddenSections.join(", ")}`);
                   return (
                     <div key={l.token} className="bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md px-3 py-2.5">
                       <div className="flex items-center gap-2">
@@ -618,9 +693,9 @@ export default function SettingsPage() {
                           <X size={13} />
                         </button>
                       </div>
-                      {hiddenItems.length > 0 && (
+                      {summaryParts.length > 0 && (
                         <p className="mt-1.5 text-[10px] text-[var(--wm-t3)]">
-                          Hidden: {hiddenItems.join(", ")}
+                          {summaryParts.join(" · ")}
                         </p>
                       )}
                     </div>

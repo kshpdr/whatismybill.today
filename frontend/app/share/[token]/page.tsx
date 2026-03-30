@@ -38,16 +38,22 @@ const C = { electricity: "#d4993a", gas: "#6892b0", water: "#47998e" };
 
 // ─── Visibility config ────────────────────────────────────────────────────────
 
+type UtilityType = "electricity" | "gas" | "water";
+
 interface ShareVisibilityConfig {
-  showPdf:     boolean;
-  showCharges: boolean;
-  showUsage:   boolean;
-  showChart:   boolean;
-  showAddress: boolean;
+  showPdf:             boolean;
+  showCharges:         boolean;
+  showUsage:           boolean;
+  showChart:           boolean;
+  showAddress:         boolean;
+  visibleUtilityTypes: UtilityType[];
+  maxMonths:           number | null;
 }
 
 const VISIBILITY_DEFAULTS: ShareVisibilityConfig = {
   showPdf: true, showCharges: true, showUsage: true, showChart: true, showAddress: true,
+  visibleUtilityTypes: ["electricity", "gas", "water"],
+  maxMonths: null,
 };
 
 // ─── Bill row ─────────────────────────────────────────────────────────────────
@@ -349,19 +355,25 @@ export default function SharePage() {
                   </div>
                 </div>
               </div>
-              {/* Utility breakdown */}
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {[
-                  { label: "Electricity", amount: approxMonthSpend.electricity, color: C.electricity, icon: <Zap className="w-3.5 h-3.5" /> },
-                  { label: "Gas",         amount: approxMonthSpend.gas,         color: C.gas,         icon: <Flame className="w-3.5 h-3.5" /> },
-                  { label: "Water",       amount: approxMonthSpend.water,       color: C.water,       icon: <Droplets className="w-3.5 h-3.5" /> },
-                ].map((u) => (
-                  <div key={u.label} className="bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md p-3">
-                    <div className="flex items-center gap-1 mb-1" style={{ color: u.color }}>{u.icon}<span className="text-[10px] font-semibold">{u.label}</span></div>
-                    <p className="text-sm font-mono text-[var(--wm-t1)] tabular-nums">{fmt$(u.amount)}</p>
+              {/* Utility breakdown — only show visible types */}
+              {(() => {
+                const tiles = [
+                  { type: "electricity" as UtilityType, label: "Electricity", amount: approxMonthSpend.electricity, color: C.electricity, icon: <Zap className="w-3.5 h-3.5" /> },
+                  { type: "gas"         as UtilityType, label: "Gas",         amount: approxMonthSpend.gas,         color: C.gas,         icon: <Flame className="w-3.5 h-3.5" /> },
+                  { type: "water"       as UtilityType, label: "Water",       amount: approxMonthSpend.water,       color: C.water,       icon: <Droplets className="w-3.5 h-3.5" /> },
+                ].filter((u) => vis.visibleUtilityTypes.includes(u.type));
+                if (tiles.length === 0) return null;
+                return (
+                  <div className={`grid gap-2 mt-2 ${tiles.length === 1 ? "grid-cols-1" : tiles.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+                    {tiles.map((u) => (
+                      <div key={u.label} className="bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md p-3">
+                        <div className="flex items-center gap-1 mb-1" style={{ color: u.color }}>{u.icon}<span className="text-[10px] font-semibold">{u.label}</span></div>
+                        <p className="text-sm font-mono text-[var(--wm-t1)] tabular-nums">{fmt$(u.amount)}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             </div>
           </div>
         )}

@@ -98,20 +98,26 @@ export const billsRelations = relations(bills, ({ one }) => ({
 // ─── Share links ──────────────────────────────────────────────────────────────
 // A share link lets anyone with the token view a household's bills read-only.
 
+export type UtilityType = "electricity" | "gas" | "water";
+
 export interface ShareVisibilityConfig {
-  showPdf:     boolean;  // allow viewing original PDF
-  showCharges: boolean;  // show charge breakdown line items
-  showUsage:   boolean;  // show usage amount and unit price
-  showChart:   boolean;  // show monthly spending chart
-  showAddress: boolean;  // show property address in header
+  showPdf:              boolean;       // allow viewing original PDF
+  showCharges:          boolean;       // show charge breakdown line items
+  showUsage:            boolean;       // show usage amount and unit price
+  showChart:            boolean;       // show monthly spending chart
+  showAddress:          boolean;       // show property address in header
+  visibleUtilityTypes:  UtilityType[]; // which utility types to include; all three = no filter
+  maxMonths:            number | null; // limit bill history; null = no limit
 }
 
 export const SHARE_VISIBILITY_DEFAULTS: ShareVisibilityConfig = {
-  showPdf:     true,
-  showCharges: true,
-  showUsage:   true,
-  showChart:   true,
-  showAddress: true,
+  showPdf:             true,
+  showCharges:         true,
+  showUsage:           true,
+  showChart:           true,
+  showAddress:         true,
+  visibleUtilityTypes: ["electricity", "gas", "water"],
+  maxMonths:           null,
 };
 
 export const shareLinks = pgTable("share_links", {

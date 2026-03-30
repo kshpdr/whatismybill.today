@@ -158,13 +158,25 @@ router.get("/share/:token", async (c) => {
     .where(eq(households.id, link.householdId)).limit(1);
   if (!household) return c.json({ error: "Household not found" }, 404);
 
-  const billRows = await db.select().from(bills)
+  const allBillRows = await db.select().from(bills)
     .where(eq(bills.householdId, link.householdId));
 
   const visibilityConfig: ShareVisibilityConfig = {
     ...SHARE_VISIBILITY_DEFAULTS,
     ...(link.visibilityConfig ?? {}),
   };
+
+  // Apply data filters server-side so hidden data is never transmitted
+  const allowedTypes = new Set(visibilityConfig.visibleUtilityTypes);
+  const cutoffDate = visibilityConfig.maxMonths != null
+    ? new Date(Date.now() - visibilityConfig.maxMonths * 30 * 86_400_000).toISOString().slice(0, 10)
+    : null;
+
+  const billRows = allBillRows.filter((b) => {
+    if (!allowedTypes.has(b.utilityType as "electricity" | "gas" | "water")) return false;
+    if (cutoffDate && b.billingPeriodEnd < cutoffDate) return false;
+    return true;
+  });
 
   return c.json({
     household: { nickname: household.nickname, address: household.address ?? null },
