@@ -9,7 +9,6 @@ DEPLOY_USER="deploy"
 APP_DIR="/home/${DEPLOY_USER}/whatismybill.today"
 REPO="https://github.com/kshpdr/whatismybill.today.git"
 DOMAIN="whatismybill.today"
-API_DOMAIN="api.whatismybill.today"
 
 # ── Colors ────────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -90,7 +89,7 @@ POSTGRES_USER=whatismybill
 POSTGRES_DB=whatismybill
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 JWT_SECRET=${JWT_SECRET}
-NEXT_PUBLIC_API_URL=https://${API_DOMAIN}
+NEXT_PUBLIC_API_URL=https://${DOMAIN}/api
 FRONTEND_URL=https://${DOMAIN}
 UPLOAD_DIR=/data/bills
 EOF
@@ -110,11 +109,13 @@ fi
 step "Writing Caddyfile"
 cat > /etc/caddy/Caddyfile << EOF
 ${DOMAIN}, www.${DOMAIN} {
-    reverse_proxy localhost:3000
-}
-
-${API_DOMAIN} {
-    reverse_proxy localhost:3001
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy localhost:3001
+    }
+    handle {
+        reverse_proxy localhost:3000
+    }
 }
 EOF
 
