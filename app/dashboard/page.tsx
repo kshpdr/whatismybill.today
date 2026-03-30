@@ -1444,7 +1444,7 @@ function DashboardPage() {
                             <p className="font-bold text-[#e8a838]">Electricity</p>
                             <p className="text-[var(--wm-t3)] tabular-nums">{fmtRound$(pgeCurrent.elec)}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left md:text-right">
                             <p className="font-bold text-[#6892b0]">Gas</p>
                             <p className="text-[var(--wm-t3)] tabular-nums">{fmtRound$(pgeCurrent.gas)}</p>
                           </div>
@@ -1553,7 +1553,7 @@ function DashboardPage() {
                         </p>
                       )}
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="text-left md:text-right shrink-0">
                       <p className="text-sm font-bold text-[var(--wm-t1)] tabular-nums">
                         {item.estLabel ? "~" : ""}{fmt$(item.amount)}{item.estLabel ? <span className="text-[10px] font-normal text-[var(--wm-t3)]">/mo</span> : null}
                       </p>
