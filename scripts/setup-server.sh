@@ -146,12 +146,12 @@ step "Pulling Docker images and starting services"
 cd "${APP_DIR}"
 
 # Check if GHCR images are public or if we need to log in
-if ! sudo -u "${DEPLOY_USER}" docker compose -f docker-compose.ghcr.yml pull 2>&1; then
+if ! sudo -u "${DEPLOY_USER}" docker compose pull 2>&1; then
   warn "Image pull failed — GHCR packages may not be public yet."
   warn "Make them public at: https://github.com/kshpdr?tab=packages"
-  warn "Then run: cd ${APP_DIR} && docker compose -f docker-compose.ghcr.yml up -d"
+  warn "Then run: cd ${APP_DIR} && docker compose up -d"
 else
-  sudo -u "${DEPLOY_USER}" docker compose -f docker-compose.ghcr.yml up -d
+  sudo -u "${DEPLOY_USER}" docker compose up -d
   ok "Services started"
 fi
 
@@ -172,5 +172,5 @@ echo "       ${API_DOMAIN}  → same"
 echo "  5. Verify: https://${DOMAIN}"
 echo ""
 echo "  Check service status:"
-echo "    sudo -u ${DEPLOY_USER} docker compose -f ${APP_DIR}/docker-compose.ghcr.yml ps"
+echo "    sudo -u ${DEPLOY_USER} docker compose -C ${APP_DIR} ps"
 echo ""

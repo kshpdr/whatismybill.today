@@ -1,3 +1,7 @@
+# Production — pulls pre-built images from GitHub Container Registry.
+# On the VM: clone the repo, put .env next to this file, then run:
+#   docker compose up -d
+
 services:
 
   postgres:
@@ -14,11 +18,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    ports:
-      - "127.0.0.1:5432:5432"  # expose for local dev (npm run dev in backend/)
 
   backend:
-    build: ./backend
+    image: ghcr.io/kshpdr/whatismybill.today/backend:latest
     restart: unless-stopped
     depends_on:
       postgres:
@@ -32,18 +34,15 @@ services:
     volumes:
       - bills_data:/data/bills
     ports:
-      - "127.0.0.1:3001:3001"  # localhost only — Caddy proxies from outside
+      - "127.0.0.1:3001:3001"
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    image: ghcr.io/kshpdr/whatismybill.today/frontend:latest
     restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "127.0.0.1:3000:3000"  # localhost only
+      - "127.0.0.1:3000:3000"
 
 volumes:
   postgres_data:   # back this up — it's your database
