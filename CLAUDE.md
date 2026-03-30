@@ -2,10 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Important: Next.js Version
-
-This uses a **non-standard Next.js version** with breaking changes. Before writing any Next.js code, read the relevant guide in `frontend/node_modules/next/dist/docs/`. APIs, conventions, and file structure may differ from training data. Heed deprecation notices.
-
 ## Commands
 
 ### Frontend (`cd frontend`)
@@ -13,7 +9,6 @@ This uses a **non-standard Next.js version** with breaking changes. Before writi
 npm run dev          # Dev server on :3000 (Turbopack)
 npm run build        # Production build
 npm run lint         # ESLint
-npm test             # Vitest watch mode
 npm run test:run     # Single test run
 npm run test:ui      # Vitest UI dashboard
 ```
@@ -26,66 +21,85 @@ npm run migrate      # Run DB migrations
 npm run generate     # Regenerate Drizzle schema types
 ```
 
-### Docker (production)
+### Local dev (postgres only via Docker)
 ```bash
-docker compose up -d --build    # Start postgres + backend + frontend
-docker compose logs -f backend  # Stream backend logs
+docker compose -f docker-compose.dev.yml up -d   # start postgres on :5432
+docker compose -f docker-compose.dev.yml down     # stop
+```
+
+### Production (VM)
+```bash
+docker compose up -d                  # pull GHCR images + start all services
+docker compose logs -f backend        # stream backend logs
+docker compose pull && docker compose up -d --no-deps backend frontend  # deploy update
 ```
 
 ## Architecture
 
 **Two separate Node.js apps:**
-- `frontend/app/` — Next.js 16 App Router frontend (React 19, Tailwind v4, Recharts, shadcn/ui)
+- `frontend/` — Next.js 16 App Router (React 19, Tailwind v4, Recharts, shadcn/ui)
 - `backend/` — Hono REST API (PostgreSQL via Drizzle ORM, JWT auth, disk-based PDF storage)
 
-**Frontend auth flow:** JWT stored in localStorage → `AuthContext` (`frontend/lib/auth-context.tsx`) → `apiFetch()` wrapper in `frontend/lib/api/client.ts` auto-attaches `Authorization: Bearer` header to all backend calls.
+**Frontend auth flow:** JWT in localStorage → `AuthContext` (`frontend/lib/auth-context.tsx`) → `apiFetch()` in `frontend/lib/api/client.ts` attaches `Authorization: Bearer` to all requests.
 
-**Bill parsing pipeline:** PDF upload → `pdf-parse` text extraction → provider detection (regex) → provider parser plugin → domain model → Drizzle insert. When text extraction fails (garbled encoding), falls back to OCR via `pdftoppm` + `tesseract`.
+**Bill parsing pipeline:** PDF upload → `pdf-parse` text extraction → provider detection → parser plugin → DB insert. Falls back to OCR (`pdftoppm` + `tesseract`) when text extraction fails.
 
-**Parser architecture:** `backend/src/lib/parsers/` has a `PARSER_REGISTRY` mapping provider IDs to parser modules. To add a new provider: create a parser file, add to registry. Currently supports PG&E (electricity + gas) and San Jose Water (bimonthly, pro-rated to calendar months).
+**Parser architecture:** `backend/src/lib/parsers/` has a `PARSER_REGISTRY` mapping provider IDs to parser modules. Currently supports PG&E (electricity + gas) and San Jose Water (bimonthly, pro-rated to calendar months). To add a provider: create parser file, add to registry.
 
-**Parser duplication:** Parser logic exists in both `frontend/lib/parsers/` (used in tests + `/test-parser` UI) and `backend/src/lib/parsers/` (used for actual uploads). Keep them in sync when modifying parsers.
+**Parser duplication:** Parser logic exists in both `frontend/lib/parsers/` (tests + `/test-parser` UI) and `backend/src/lib/parsers/` (actual uploads). Keep in sync when modifying.
 
-**Database schema** (`backend/src/db/schema.ts`): `users`, `households`, `householdMembers` (composite PK), `bills` (charges stored as JSONB), `shareLinks` (90-day expiry tokens for read-only landlord views).
+**Database schema** (`backend/src/db/schema.ts`): `users`, `households`, `householdMembers`, `bills` (charges as JSONB), `shareLinks` (90-day expiry read-only tokens).
 
-**Key data flow:** `useBills()` hook (`frontend/lib/use-bills.ts`) fetches `GET /bills?householdId=X` → `frontend/lib/bill-utils.ts` groups/processes bills → `frontend/app/dashboard/page.tsx` renders dashboard with charts and upload modal.
+**Key data flow:** `useBills()` hook (`frontend/lib/use-bills.ts`) → `frontend/lib/bill-utils.ts` → `frontend/app/dashboard/page.tsx`.
 
-**Billing period convention:** Always use `billingPeriodEnd` for monthly grouping. PG&E electricity and gas have different start dates but the same end date on a combined bill.
+**Billing period convention:** Always use `billingPeriodEnd` for monthly grouping. PG&E electricity and gas have different start dates but the same end date.
 
 ## Tests
 
-Tests live in `frontend/tests/` and cover `frontend/lib/**/*.ts` only (frontend utilities and parsers). Test fixtures are in `frontend/tests/fixtures.ts`. Key areas: parser adapter, water bill pro-rating logic, billing cycle grouping.
-
-To run a single test file:
+Live in `frontend/tests/`, cover `frontend/lib/**/*.ts` only. Run a single file:
 ```bash
 cd frontend && npm run test:run -- tests/adapter.test.ts
 ```
 
 ## Environment Variables
 
-Frontend (`frontend/.env.local`):
-- `NEXT_PUBLIC_API_URL` — Backend URL, baked in at build time
+**`frontend/.env.local`** (local dev only):
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
 
-Backend (`backend/.env`):
-- `DATABASE_URL` — PostgreSQL connection string
-- `JWT_SECRET` — Used for signing tokens (`openssl rand -hex 32`)
-- `UPLOAD_DIR` — PDF storage path (default `/data/bills`)
-- `FRONTEND_URL` — For CORS allow-list
+**`backend/.env`** (local dev only):
+```
+DATABASE_URL=postgresql://whatismybill:localpassword@127.0.0.1:5432/whatismybill
+JWT_SECRET=...
+UPLOAD_DIR=./data/bills
+FRONTEND_URL=http://localhost:3000
+```
+
+**Root `.env`** (docker compose / production):
+```
+POSTGRES_PASSWORD=...
+JWT_SECRET=...
+NEXT_PUBLIC_API_URL=https://whatismybill.today/api
+FRONTEND_URL=https://whatismybill.today
+```
+See `.env.example` for full reference.
 
 ## Design System
 
-All UI follows the minimal dark design system documented in **`DESIGN.md`**. Key rules:
+Documented in `DESIGN.md`. Key rules:
 - Background `#0a0a0a`, surface `#0f0f0f`, card `#141414`, hover `#1a1a1a`
-- Single amber accent `#e8a838` — only for interactive elements (buttons, active states, links)
-- Utility colors: electricity `#d4993a`, gas `#6892b0`, water `#47998e` — data only, never for buttons
-- All numeric values in `font-mono` (Geist Mono)
+- Single amber accent `#e8a838` — interactive elements only (buttons, active states, links)
+- Utility colors: electricity `#d4993a`, gas `#6892b0`, water `#47998e` — data only, never buttons
+- All numbers in `font-mono` (Geist Mono)
 - `rounded-md` (6px) everywhere — no `rounded-xl` or `rounded-2xl`
-- No shadows, no blur, no gradients, no white/light backgrounds
-- Tailwind v4 syntax: use arbitrary values like `bg-[#141414]` and `border-[rgba(255,255,255,0.07)]`
+- No shadows, blur, gradients, or white/light backgrounds
+- Tailwind v4: use arbitrary values `bg-[#141414]`, `border-[rgba(255,255,255,0.07)]`
 
 ## Notes
 
-- `frontend/app/dashboard/page.tsx` is a large client component (~1600+ lines) handling the entire dashboard.
-- Share links (`/share/[token]`) are public read-only views — no auth required, served by `GET /share/:token`.
-- The `/demo` route and `/test-parser` route are unauthenticated utility pages.
-- `frontend/app/mockup/page.tsx` is a design reference page showing all screens in the minimal dark design system.
+- `frontend/app/dashboard/page.tsx` is a large client component (~1600+ lines) — the entire dashboard.
+- Share links (`/share/[token]`) are public read-only views, no auth required.
+- `/demo` and `/test-parser` are unauthenticated utility pages.
+- `frontend/app/mockup/page.tsx` is a design reference page for the design system.
+- Next.js version is non-standard — APIs may differ from training data.
