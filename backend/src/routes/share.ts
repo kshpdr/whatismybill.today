@@ -5,6 +5,7 @@ import { db } from "../db/index.js";
 import { shareLinks, households, householdMembers, bills, SHARE_VISIBILITY_DEFAULTS } from "../db/schema.js";
 import type { ShareVisibilityConfig } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
+import { mergeVisibilityConfig, filterBillsByVisibility } from "../lib/share-filter.js";
 
 type Vars = { Variables: { userId: string } };
 const router = new Hono<Vars>();
@@ -66,10 +67,7 @@ router.post("/households/:id/share", requireAuth, async (c) => {
     : undefined;
 
   // Merge provided visibility overrides with defaults
-  const visibilityConfig: ShareVisibilityConfig = {
-    ...SHARE_VISIBILITY_DEFAULTS,
-    ...(body.visibilityConfig ?? {}),
-  };
+  const visibilityConfig = mergeVisibilityConfig(body.visibilityConfig ?? {});
 
   const token = generateToken();
   const [link] = await db.insert(shareLinks).values({
@@ -161,22 +159,8 @@ router.get("/share/:token", async (c) => {
   const allBillRows = await db.select().from(bills)
     .where(eq(bills.householdId, link.householdId));
 
-  const visibilityConfig: ShareVisibilityConfig = {
-    ...SHARE_VISIBILITY_DEFAULTS,
-    ...(link.visibilityConfig ?? {}),
-  };
-
-  // Apply data filters server-side so hidden data is never transmitted
-  const allowedTypes = new Set(visibilityConfig.visibleUtilityTypes);
-  const cutoffDate = visibilityConfig.maxMonths != null
-    ? new Date(Date.now() - visibilityConfig.maxMonths * 30 * 86_400_000).toISOString().slice(0, 10)
-    : null;
-
-  const billRows = allBillRows.filter((b) => {
-    if (!allowedTypes.has(b.utilityType as "electricity" | "gas" | "water")) return false;
-    if (cutoffDate && b.billingPeriodEnd < cutoffDate) return false;
-    return true;
-  });
+  const visibilityConfig = mergeVisibilityConfig(link.visibilityConfig);
+  const billRows = filterBillsByVisibility(allBillRows, visibilityConfig);
 
   return c.json({
     household: { nickname: household.nickname, address: household.address ?? null },
