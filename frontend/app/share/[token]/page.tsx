@@ -391,7 +391,7 @@ export default function SharePage() {
                     <XAxis dataKey="month" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: "rgba(255,255,255,0.30)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} width={34} />
                     <Tooltip
-                      formatter={(v: number, name: string) => [`$${Number(v).toFixed(2)}`, name]}
+                      formatter={(v, name) => [`$${Number(v).toFixed(2)}`, name]}
                       contentStyle={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, fontSize: 12, color: "rgba(255,255,255,0.90)" }}
                     />
                     <Bar dataKey="electricity" name="Electricity" stackId="a" fill={C.electricity} radius={[0,0,0,0]}
