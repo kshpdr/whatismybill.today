@@ -91,22 +91,8 @@ function BillDetailPanel({ bill, token, vis, onClose }: {
   vis: ShareVisibilityConfig;
   onClose: () => void;
 }) {
-  const [pdfLoading, setPdfLoading] = useState(false);
   const colors = [C.electricity, C.gas, C.water, "#a78bfa", "#fb923c", "#f472b6"];
-
-  async function handleViewPdf() {
-    setPdfLoading(true);
-    try {
-      const res = await fetch(`${BASE}/share/${token}/bills/${bill.id}/pdf`);
-      if (!res.ok) return;
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } finally {
-      setPdfLoading(false);
-    }
-  }
+  const pdfUrl = `${BASE}/share/${token}/bills/${bill.id}/pdf`;
 
   // Build KPI tiles depending on visibility
   const kpiTiles = vis.showUsage
@@ -181,13 +167,14 @@ function BillDetailPanel({ bill, token, vis, onClose }: {
                 </div>
                 <p className="text-sm text-[var(--wm-t2)]">Original PDF</p>
               </div>
-              <button
-                onClick={handleViewPdf}
-                disabled={pdfLoading}
-                className="shrink-0 text-xs font-semibold text-[#e8a838] hover:text-[#d4993a] disabled:opacity-50 transition-colors"
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 text-xs font-semibold text-[#e8a838] hover:text-[#d4993a] transition-colors"
               >
-                {pdfLoading ? "Opening…" : "View →"}
-              </button>
+                View →
+              </a>
             </div>
           )}
         </div>
