@@ -22,6 +22,13 @@
       "when": 1774100000000,
       "tag": "0002_nullable_storage_ref",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774110000000,
+      "tag": "0003_share_link_visibility",
+      "breakpoints": true
     }
   ]
 }
