@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Zap, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { TelegramLoginButton } from "@/app/components/TelegramLoginButton";
 
 // ─── Login page ───────────────────────────────────────────────────────────────
 
@@ -124,6 +125,13 @@ export default function LoginPage() {
             <span className="text-xs text-[var(--wm-t4)]">or</span>
             <div className="flex-1 h-px bg-[rgba(255,255,255,0.07)]" />
           </div>
+
+          {/* Telegram login — renders only when the bot is configured */}
+          {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+            <div className="flex justify-center mb-3">
+              <TelegramLoginButton />
+            </div>
+          )}
 
           {/* demo shortcut — /demo redirects to /?demo=1 */}
           <Link

@@ -5,8 +5,8 @@ function getSecret(): Uint8Array {
   return new TextEncoder().encode(process.env.JWT_SECRET);
 }
 
-export async function signToken(userId: string, email: string): Promise<string> {
-  return new SignJWT({ email })
+export async function signToken(userId: string, email: string | null): Promise<string> {
+  return new SignJWT({ email: email ?? "" })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setIssuedAt()

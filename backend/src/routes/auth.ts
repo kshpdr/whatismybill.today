@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { users } from "../db/schema.js";
 import { signToken } from "../lib/jwt.js";
+import { verifyTelegramAuth, type TelegramAuthPayload } from "../lib/telegram-auth.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const auth = new Hono<{ Variables: { userId: string; userEmail: string } }>();
@@ -52,8 +53,47 @@ auth.post("/signin", async (c) => {
     .where(eq(users.email, email.toLowerCase()))
     .limit(1);
 
-  if (!user || !(await compare(password, user.passwordHash))) {
+  // user.passwordHash is null for Telegram-only accounts — reject password login for them.
+  if (!user || !user.passwordHash || !(await compare(password, user.passwordHash))) {
     return c.json({ error: "No account found with this email or password" }, 401);
+  }
+
+  const token = await signToken(user.id, user.email);
+  return c.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+});
+
+// ─── POST /auth/telegram ──────────────────────────────────────────────────────
+// Telegram Login Widget: verify the signed payload, then find-or-create a user
+// keyed by their Telegram ID and issue our own JWT.
+
+auth.post("/telegram", async (c) => {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    return c.json({ error: "Telegram login is not configured" }, 503);
+  }
+
+  const payload = await c.req.json<TelegramAuthPayload>();
+  if (!payload?.id || !payload?.hash) {
+    return c.json({ error: "Invalid Telegram payload" }, 400);
+  }
+
+  if (!verifyTelegramAuth(payload, botToken)) {
+    return c.json({ error: "Telegram authentication failed" }, 401);
+  }
+
+  const telegramId = String(payload.id);
+
+  let [user] = await db.select().from(users).where(eq(users.telegramId, telegramId)).limit(1);
+
+  if (!user) {
+    const name =
+      [payload.first_name, payload.last_name].filter(Boolean).join(" ").trim() ||
+      payload.username ||
+      "Telegram user";
+    [user] = await db
+      .insert(users)
+      .values({ name, telegramId, email: null, passwordHash: null })
+      .returning();
   }
 
   const token = await signToken(user.id, user.email);

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { apiFetch, setToken, clearToken } from "./api/client";
-import type { UserProfile, Household } from "./types";
+import type { UserProfile, Household, TelegramAuthPayload } from "./types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,6 +15,7 @@ interface AuthContextValue {
   refreshHouseholds:    () => Promise<void>;
   signIn:               (email: string, password: string) => Promise<void>;
   signUp:               (name: string, email: string, password: string) => Promise<void>;
+  signInWithTelegram:   (payload: TelegramAuthPayload) => Promise<void>;
   signOut:              () => void;
 }
 
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextValue>({
   refreshHouseholds:   async () => {},
   signIn:              async () => {},
   signUp:              async () => {},
+  signInWithTelegram:  async () => {},
   signOut:             () => {},
 });
 
@@ -95,6 +97,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentHousehold(null);
   }, []);
 
+  const signInWithTelegram = useCallback(async (payload: TelegramAuthPayload) => {
+    const res = await apiFetch<{ token: string; user: UserProfile }>("/auth/telegram", {
+      method: "POST",
+      body:   JSON.stringify(payload),
+    });
+    setToken(res.token);
+    setUser(res.user);
+    await loadHouseholds();
+  }, [loadHouseholds]);
+
   const signOut = useCallback(() => {
     clearToken();
     setUser(null);
@@ -105,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, loading, households, currentHousehold, setCurrentHousehold,
-      refreshHouseholds, signIn, signUp, signOut,
+      refreshHouseholds, signIn, signUp, signInWithTelegram, signOut,
     }}>
       {children}
     </AuthContext.Provider>

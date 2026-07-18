@@ -29,6 +29,13 @@
       "when": 1774110000000,
       "tag": "0003_share_link_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774120000000,
+      "tag": "0004_telegram_auth",
+      "breakpoints": true
     }
   ]
 }

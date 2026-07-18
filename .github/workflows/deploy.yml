@@ -41,6 +41,7 @@ jobs:
           tags: ghcr.io/${{ github.repository }}/frontend:latest
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=${{ secrets.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

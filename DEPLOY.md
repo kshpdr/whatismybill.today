@@ -37,6 +37,15 @@ After running, save the printed `POSTGRES_PASSWORD`, `JWT_SECRET`, and `DEPLOY_S
 | Secret | `DEPLOY_USER` | `deploy` |
 | Secret | `DEPLOY_SSH_KEY` | Private key from setup script output |
 | Secret | `NEXT_PUBLIC_API_URL` | `https://whatismybill.today/api` |
+| Secret | `NEXT_PUBLIC_TELEGRAM_BOT_USERNAME` | Telegram bot username, no `@` (e.g. `whatismybillbot`). Baked into the frontend bundle at build time. Omit to disable Telegram login. |
+
+Also add to the VM's `~/whatismybill.today/.env` (read by `docker compose`):
+
+```
+TELEGRAM_BOT_TOKEN=<token from @BotFather>
+```
+
+The backend verifies Telegram logins with this token. Both must belong to the same bot, and the bot's domain must be set to `whatismybill.today` via BotFather's `/setdomain`.
 
 ---
 

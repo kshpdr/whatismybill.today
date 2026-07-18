@@ -6,8 +6,19 @@ export type MemberRole  = "owner" | "member";
 
 export interface UserProfile {
   id:        string;
-  email:     string;
+  email:     string | null;   // null for Telegram-only accounts
   name:      string;
+}
+
+/** Payload handed to the browser by the Telegram Login Widget. */
+export interface TelegramAuthPayload {
+  id:          number;
+  first_name?: string;
+  last_name?:  string;
+  username?:   string;
+  photo_url?:  string;
+  auth_date:   number;
+  hash:        string;
 }
 
 // ─── Households ───────────────────────────────────────────────────────────────

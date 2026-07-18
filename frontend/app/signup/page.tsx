@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Zap, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { TelegramLoginButton } from "@/app/components/TelegramLoginButton";
 
 // ─── Password strength indicator ─────────────────────────────────────────────
 
@@ -167,6 +168,18 @@ export default function SignupPage() {
               )}
             </button>
           </form>
+
+          {/* Telegram login — renders only when the bot is configured */}
+          {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+            <div className="flex flex-col items-center mt-4">
+              <div className="flex items-center gap-3 w-full mb-3">
+                <div className="flex-1 h-px bg-[rgba(255,255,255,0.07)]" />
+                <span className="text-xs text-[var(--wm-t4)]">or</span>
+                <div className="flex-1 h-px bg-[rgba(255,255,255,0.07)]" />
+              </div>
+              <TelegramLoginButton />
+            </div>
+          )}
 
           <p className="text-center text-xs text-[var(--wm-t4)] mt-4 leading-relaxed">
             By creating an account you agree to our{" "}

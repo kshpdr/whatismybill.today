@@ -15,9 +15,12 @@ import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id:           uuid("id").primaryKey().defaultRandom(),
-  email:        varchar("email", { length: 255 }).unique().notNull(),
+  // email/passwordHash are nullable: Telegram-login users have neither until
+  // they optionally add an email later.
+  email:        varchar("email", { length: 255 }).unique(),
   name:         varchar("name", { length: 255 }).notNull(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  passwordHash: varchar("password_hash", { length: 255 }),
+  telegramId:   varchar("telegram_id", { length: 32 }).unique(),
   createdAt:    timestamp("created_at").defaultNow().notNull(),
 });
 
