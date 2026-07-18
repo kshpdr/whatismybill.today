@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   ChevronLeft, Copy, Check, RotateCw, Crown, UserMinus,
   Zap, Flame, Droplets, Pencil, X, Trash2, LogOut, AlertTriangle, Users, Share2,
-  Link, Shield, Plus, FileText, BarChart2, Gauge, MapPin, List,
+  Link, Shield, Plus, FileText, BarChart2, Gauge, MapPin, List, Send,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api/client";
-import type { HouseholdMember } from "@/lib/types";
+import { TelegramLoginButton, isTelegramConfigured } from "@/app/components/TelegramLoginButton";
+import type { HouseholdMember, TelegramAuthPayload } from "@/lib/types";
 
 // ─── Mock data (used when Firebase not configured) ────────────────────────────
 
@@ -92,7 +93,33 @@ function Section({
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, currentHousehold, refreshHouseholds, signOut } = useAuth();
+  const { user, currentHousehold, refreshHouseholds, signOut, linkTelegram, unlinkTelegram } = useAuth();
+  const [tgBusy, setTgBusy]   = useState(false);
+  const [tgError, setTgError] = useState<string | null>(null);
+
+  async function handleTelegramLink(payload: TelegramAuthPayload) {
+    setTgError(null);
+    setTgBusy(true);
+    try {
+      await linkTelegram(payload);
+    } catch (err) {
+      setTgError(err instanceof Error ? err.message : "Could not connect Telegram");
+    } finally {
+      setTgBusy(false);
+    }
+  }
+
+  async function handleTelegramUnlink() {
+    setTgError(null);
+    setTgBusy(true);
+    try {
+      await unlinkTelegram();
+    } catch (err) {
+      setTgError(err instanceof Error ? err.message : "Could not disconnect Telegram");
+    } finally {
+      setTgBusy(false);
+    }
+  }
 
   const household = currentHousehold ?? MOCK_HOUSEHOLD;
   const isOwner = user ? user.id === household.ownerId : true;
@@ -705,6 +732,43 @@ export default function SettingsPage() {
             )}
           </div>
         </Section>
+
+        {/* ── ACCOUNT / TELEGRAM ── */}
+        {isTelegramConfigured() && (
+          <Section title="Account">
+            <div className="px-4 py-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-[#6892b0]/15 flex items-center justify-center shrink-0">
+                  <Send size={14} className="text-[#6892b0]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[var(--wm-t1)]">Telegram login</p>
+                  <p className="text-xs text-[var(--wm-t3)] mt-0.5">
+                    {user?.telegramLinked
+                      ? "Connected — you can sign in with Telegram."
+                      : "Connect Telegram to sign in with one tap."}
+                  </p>
+                </div>
+                {user?.telegramLinked ? (
+                  <button
+                    onClick={handleTelegramUnlink}
+                    disabled={tgBusy}
+                    className="shrink-0 text-xs border border-[var(--wm-border)] text-[var(--wm-t2)] hover:bg-[var(--wm-hover)] disabled:opacity-60 px-3 py-1.5 rounded-md transition-colors"
+                  >
+                    {tgBusy ? "…" : "Disconnect"}
+                  </button>
+                ) : (
+                  <div className="shrink-0">
+                    <TelegramLoginButton onAuth={handleTelegramLink} />
+                  </div>
+                )}
+              </div>
+              {tgError && (
+                <p className="text-xs text-[var(--wm-red-text)] mt-3">{tgError}</p>
+              )}
+            </div>
+          </Section>
+        )}
 
         {/* ── DANGER ZONE ── */}
         <section>

@@ -5,9 +5,10 @@ export type MemberRole  = "owner" | "member";
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface UserProfile {
-  id:        string;
-  email:     string | null;   // null for Telegram-only accounts
-  name:      string;
+  id:             string;
+  email:          string | null;   // null for Telegram-only accounts
+  name:           string;
+  telegramLinked?: boolean;         // present on /auth/me
 }
 
 /** Payload handed to the browser by the Telegram Login Widget. */

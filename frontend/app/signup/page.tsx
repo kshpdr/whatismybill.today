@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Zap, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { TelegramLoginButton } from "@/app/components/TelegramLoginButton";
+import { TelegramLoginButton, isTelegramConfigured } from "@/app/components/TelegramLoginButton";
+import type { TelegramAuthPayload } from "@/lib/types";
 
 // ─── Password strength indicator ─────────────────────────────────────────────
 
@@ -43,13 +44,29 @@ function PasswordStrength({ password }: { password: string }) {
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signUp } = useAuth();
+  const { signUp, signInWithTelegram, registerWithTelegram } = useAuth();
   const [name, setName]         = useState("");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const [tgError, setTgError]   = useState<string | null>(null);
+
+  async function handleTelegramAuth(payload: TelegramAuthPayload) {
+    setTgError(null);
+    try {
+      const result = await signInWithTelegram(payload);
+      if (result === "ok") {
+        router.push("/dashboard"); // Telegram already linked to an account
+      } else {
+        await registerWithTelegram(payload); // new account → onboarding
+        router.push("/onboarding");
+      }
+    } catch (err) {
+      setTgError(err instanceof Error ? err.message : "Telegram sign up failed");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -169,15 +186,18 @@ export default function SignupPage() {
             </button>
           </form>
 
-          {/* Telegram login — renders only when the bot is configured */}
-          {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
+          {/* Telegram signup — renders only when the bot is configured */}
+          {isTelegramConfigured() && (
             <div className="flex flex-col items-center mt-4">
               <div className="flex items-center gap-3 w-full mb-3">
                 <div className="flex-1 h-px bg-[rgba(255,255,255,0.07)]" />
                 <span className="text-xs text-[var(--wm-t4)]">or</span>
                 <div className="flex-1 h-px bg-[rgba(255,255,255,0.07)]" />
               </div>
-              <TelegramLoginButton />
+              <TelegramLoginButton onAuth={handleTelegramAuth} />
+              {tgError && (
+                <p className="text-xs text-[var(--wm-red-text)] mt-2 text-center">{tgError}</p>
+              )}
             </div>
           )}
 

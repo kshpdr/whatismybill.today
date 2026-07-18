@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { hash, compare } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db } from "../db/index.js";
@@ -62,42 +62,103 @@ auth.post("/signin", async (c) => {
   return c.json({ token, user: { id: user.id, name: user.name, email: user.email } });
 });
 
-// ─── POST /auth/telegram ──────────────────────────────────────────────────────
-// Telegram Login Widget: verify the signed payload, then find-or-create a user
-// keyed by their Telegram ID and issue our own JWT.
+// ─── Telegram helpers ─────────────────────────────────────────────────────────
 
-auth.post("/telegram", async (c) => {
+/** Verify a request's Telegram payload. Returns the payload + normalized id, or
+ * a ready-to-return error Response. */
+async function readTelegramPayload(c: Context) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) {
-    return c.json({ error: "Telegram login is not configured" }, 503);
+    return { error: c.json({ error: "Telegram login is not configured" }, 503) };
   }
-
-  const payload = await c.req.json<TelegramAuthPayload>();
+  const payload = await c.req.json<TelegramAuthPayload & { create?: boolean }>();
   if (!payload?.id || !payload?.hash) {
-    return c.json({ error: "Invalid Telegram payload" }, 400);
+    return { error: c.json({ error: "Invalid Telegram payload" }, 400) };
   }
-
   if (!verifyTelegramAuth(payload, botToken)) {
-    return c.json({ error: "Telegram authentication failed" }, 401);
+    return { error: c.json({ error: "Telegram authentication failed" }, 401) };
   }
+  return { payload, telegramId: String(payload.id) };
+}
 
-  const telegramId = String(payload.id);
+function telegramDisplayName(payload: TelegramAuthPayload): string {
+  return (
+    [payload.first_name, payload.last_name].filter(Boolean).join(" ").trim() ||
+    payload.username ||
+    "Telegram user"
+  );
+}
+
+// ─── POST /auth/telegram ──────────────────────────────────────────────────────
+// Telegram Login Widget sign-in. Verifies the signed payload, then:
+//   - if the Telegram ID is already linked to a user → issue a JWT (log in)
+//   - if unknown and { create: true } → create a Telegram-only account + log in
+//   - if unknown and no create flag → return { linked: false } so the client can
+//     ask "new or existing?" instead of silently making a duplicate account.
+
+auth.post("/telegram", async (c) => {
+  const parsed = await readTelegramPayload(c);
+  if ("error" in parsed) return parsed.error;
+  const { payload, telegramId } = parsed;
 
   let [user] = await db.select().from(users).where(eq(users.telegramId, telegramId)).limit(1);
 
   if (!user) {
-    const name =
-      [payload.first_name, payload.last_name].filter(Boolean).join(" ").trim() ||
-      payload.username ||
-      "Telegram user";
+    if (!payload.create) {
+      return c.json({ linked: false });
+    }
     [user] = await db
       .insert(users)
-      .values({ name, telegramId, email: null, passwordHash: null })
+      .values({ name: telegramDisplayName(payload), telegramId, email: null, passwordHash: null })
       .returning();
   }
 
   const token = await signToken(user.id, user.email);
   return c.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+});
+
+// ─── POST /auth/telegram/link ─────────────────────────────────────────────────
+// Attach a Telegram identity to the CURRENTLY signed-in account.
+
+auth.post("/telegram/link", requireAuth, async (c) => {
+  const parsed = await readTelegramPayload(c);
+  if ("error" in parsed) return parsed.error;
+  const { telegramId } = parsed;
+  const userId = c.get("userId");
+
+  const [owner] = await db.select().from(users).where(eq(users.telegramId, telegramId)).limit(1);
+  if (owner && owner.id !== userId) {
+    return c.json(
+      { error: "This Telegram account is already linked to another account." },
+      409
+    );
+  }
+  if (owner && owner.id === userId) {
+    return c.json({ linked: true }); // idempotent
+  }
+
+  await db.update(users).set({ telegramId }).where(eq(users.id, userId));
+  return c.json({ linked: true });
+});
+
+// ─── POST /auth/telegram/unlink ───────────────────────────────────────────────
+// Remove the Telegram identity from the signed-in account. Blocked if the user
+// has no password, since Telegram would be their only way back in.
+
+auth.post("/telegram/unlink", requireAuth, async (c) => {
+  const userId = c.get("userId");
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return c.json({ error: "User not found" }, 404);
+
+  if (!user.passwordHash) {
+    return c.json(
+      { error: "Set a password before disconnecting Telegram, or you'll lose access to this account." },
+      400
+    );
+  }
+
+  await db.update(users).set({ telegramId: null }).where(eq(users.id, userId));
+  return c.json({ linked: false });
 });
 
 // ─── GET /auth/me ─────────────────────────────────────────────────────────────
@@ -106,7 +167,12 @@ auth.get("/me", requireAuth, async (c) => {
   const userId = c.get("userId");
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) return c.json({ error: "User not found" }, 404);
-  return c.json({ id: user.id, name: user.name, email: user.email });
+  return c.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    telegramLinked: user.telegramId != null,
+  });
 });
 
 // ─── POST /auth/reset-password ────────────────────────────────────────────────

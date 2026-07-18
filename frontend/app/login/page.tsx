@@ -3,20 +3,29 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Zap, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Zap, Eye, EyeOff, ArrowRight, Send } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { TelegramLoginButton } from "@/app/components/TelegramLoginButton";
+import { TelegramLoginButton, isTelegramConfigured } from "@/app/components/TelegramLoginButton";
+import type { TelegramAuthPayload } from "@/lib/types";
+
+const PENDING_TG_KEY = "pending_tg_link";
 
 // ─── Login page ───────────────────────────────────────────────────────────────
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, signInWithTelegram, registerWithTelegram, linkTelegram } = useAuth();
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd]   = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+
+  // Set when an unknown Telegram account logs in — drives the new/existing prompt.
+  const [pendingTg, setPendingTg] = useState<TelegramAuthPayload | null>(null);
+  // True after the user picks "I already have an account" — we auto-link on sign-in.
+  const [linkMode, setLinkMode]   = useState(false);
+  const [tgError, setTgError]     = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,11 +33,55 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(email, password);
+      // If the user came here to link a Telegram account, attach it now.
+      const stashed = sessionStorage.getItem(PENDING_TG_KEY);
+      if (stashed) {
+        sessionStorage.removeItem(PENDING_TG_KEY);
+        try {
+          await linkTelegram(JSON.parse(stashed) as TelegramAuthPayload);
+        } catch {
+          // Non-fatal: they're signed in; linking can be retried in Settings.
+        }
+      }
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
       setLoading(false);
     }
+  }
+
+  async function handleTelegramAuth(payload: TelegramAuthPayload) {
+    setTgError(null);
+    try {
+      const result = await signInWithTelegram(payload);
+      if (result === "ok") {
+        router.push("/dashboard");
+      } else {
+        // Unknown Telegram account — ask whether they're new or existing.
+        setPendingTg(payload);
+      }
+    } catch (err) {
+      setTgError(err instanceof Error ? err.message : "Telegram sign in failed");
+    }
+  }
+
+  async function handleCreateNew() {
+    if (!pendingTg) return;
+    setTgError(null);
+    try {
+      await registerWithTelegram(pendingTg);
+      router.push("/dashboard");
+    } catch (err) {
+      setTgError(err instanceof Error ? err.message : "Could not create account");
+    }
+  }
+
+  function handleHaveAccount() {
+    if (!pendingTg) return;
+    // Stash the signed payload; handleSubmit links it right after email sign-in.
+    sessionStorage.setItem(PENDING_TG_KEY, JSON.stringify(pendingTg));
+    setPendingTg(null);
+    setLinkMode(true);
   }
 
   return (
@@ -45,6 +98,14 @@ export default function LoginPage() {
         <div className="bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md p-6">
           <h2 className="text-base font-semibold text-[var(--wm-t1)] mb-1">Welcome back</h2>
           <p className="text-sm text-[var(--wm-t3)] mb-6">Sign in to your account to continue</p>
+
+          {/* link-mode banner */}
+          {linkMode && (
+            <div className="flex items-start gap-2 bg-[#6892b0]/10 border border-[#6892b0]/30 text-[var(--wm-t2)] rounded-md px-3 py-2.5 text-xs mb-4">
+              <Send className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#6892b0]" />
+              <span>Sign in with your email and we&apos;ll connect your Telegram account automatically.</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* email */}
@@ -127,9 +188,12 @@ export default function LoginPage() {
           </div>
 
           {/* Telegram login — renders only when the bot is configured */}
-          {process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME && (
-            <div className="flex justify-center mb-3">
-              <TelegramLoginButton />
+          {isTelegramConfigured() && (
+            <div className="flex flex-col items-center mb-3">
+              <TelegramLoginButton onAuth={handleTelegramAuth} />
+              {tgError && (
+                <p className="text-xs text-[var(--wm-red-text)] mt-2 text-center">{tgError}</p>
+              )}
             </div>
           )}
 
@@ -149,6 +213,48 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
+
+      {/* New-or-existing prompt for an unknown Telegram account */}
+      {pendingTg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
+          <div className="w-full max-w-sm bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Send className="w-4 h-4 text-[#6892b0]" />
+              <h3 className="text-base font-semibold text-[var(--wm-t1)]">New Telegram login</h3>
+            </div>
+            <p className="text-sm text-[var(--wm-t3)] mb-5">
+              This Telegram account isn&apos;t linked yet. Do you already have a whatismybill.today account?
+            </p>
+
+            {tgError && (
+              <div className="bg-[var(--wm-red-dim)] text-[var(--wm-red-text)] rounded-md px-3 py-2 text-sm mb-4">
+                {tgError}
+              </div>
+            )}
+
+            <div className="space-y-2.5">
+              <button
+                onClick={handleHaveAccount}
+                className="w-full flex items-center justify-center gap-2 bg-[#e8a838] hover:bg-[#d4993a] text-black py-2 rounded-md font-semibold text-sm transition-colors"
+              >
+                Yes — sign in to link it
+              </button>
+              <button
+                onClick={handleCreateNew}
+                className="w-full flex items-center justify-center gap-2 border border-[var(--wm-border)] hover:bg-[var(--wm-hover)] text-[var(--wm-t2)] py-2 rounded-md text-sm transition-colors"
+              >
+                No — create a new account
+              </button>
+              <button
+                onClick={() => { setPendingTg(null); setTgError(null); }}
+                className="w-full text-center text-xs text-[var(--wm-t3)] hover:text-[var(--wm-t2)] py-1 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
