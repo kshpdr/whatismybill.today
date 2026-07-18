@@ -6,6 +6,8 @@ import authRouter      from "./routes/auth.js";
 import householdsRouter from "./routes/households.js";
 import billsRouter     from "./routes/bills.js";
 import shareRouter     from "./routes/share.js";
+import telegramRouter  from "./routes/telegram.js";
+import { registerWebhookFromEnv } from "./lib/telegram-bot.js";
 
 const app = new Hono();
 
@@ -25,6 +27,7 @@ app.use(
 app.route("/auth",        authRouter);
 app.route("/households",  householdsRouter);
 app.route("/bills",       billsRouter);
+app.route("/telegram",    telegramRouter); // bot webhook: /telegram/webhook
 app.route("/",            shareRouter);   // /share/:token + /households/:id/share
 
 // ─── Health check ─────────────────────────────────────────────────────────────
@@ -37,3 +40,6 @@ const port = Number(process.env.PORT ?? 3001);
 console.log(`Backend running on http://localhost:${port}`);
 
 serve({ fetch: app.fetch, port });
+
+// Register the Telegram webhook (no-op unless TELEGRAM_BOT_TOKEN + URL are set).
+void registerWebhookFromEnv();
