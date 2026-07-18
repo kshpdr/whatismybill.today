@@ -38,7 +38,7 @@ export default function LoginPage() {
         {/* brand mark */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <Zap className="w-4 h-4 text-[#e8a838]" strokeWidth={2.5} />
-          <span className="text-sm font-mono text-[var(--wm-t2)]">whatismybill.today <span className="text-[10px] text-[var(--wm-t3)]">v2026-03-28</span></span>
+          <span className="text-sm font-mono text-[var(--wm-t2)]">whatismybill.today <span className="text-[10px] text-[var(--wm-t3)]">{process.env.NEXT_PUBLIC_APP_VERSION || "dev"}</span></span>
         </div>
 
         {/* card */}
