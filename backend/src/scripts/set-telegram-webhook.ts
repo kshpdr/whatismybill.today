@@ -9,7 +9,7 @@
  * on startup via registerWebhookFromEnv(); this script is for manual control.
  */
 
-import { setWebhook, deleteWebhook, isTelegramConfigured } from "../lib/telegram-bot.js";
+import { setWebhook, deleteWebhook, isTelegramConfigured, resolveWebhookUrl } from "../lib/telegram-bot.js";
 
 async function main() {
   if (!isTelegramConfigured()) {
@@ -25,9 +25,9 @@ async function main() {
     return;
   }
 
-  const url = process.env.TELEGRAM_WEBHOOK_URL;
+  const url = resolveWebhookUrl();
   if (!url) {
-    console.error("TELEGRAM_WEBHOOK_URL is not set.");
+    console.error("No webhook URL — set TELEGRAM_WEBHOOK_URL or an https FRONTEND_URL.");
     process.exit(1);
   }
 

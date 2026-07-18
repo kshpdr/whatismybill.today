@@ -109,16 +109,36 @@ export async function deleteWebhook(): Promise<void> {
 }
 
 /**
+ * Resolve the public webhook URL. Prefers an explicit TELEGRAM_WEBHOOK_URL;
+ * otherwise derives it from FRONTEND_URL (the backend is reached at
+ * `${FRONTEND_URL}/api/telegram/webhook` — Caddy strips the /api prefix).
+ * Returns null when only a non-HTTPS URL could be derived (e.g. localhost),
+ * since Telegram requires public HTTPS.
+ */
+export function resolveWebhookUrl(): string | null {
+  const explicit = process.env.TELEGRAM_WEBHOOK_URL;
+  if (explicit) return explicit;
+
+  const frontend = process.env.FRONTEND_URL;
+  if (frontend?.startsWith("https://")) {
+    return `${frontend.replace(/\/$/, "")}/api/telegram/webhook`;
+  }
+  return null;
+}
+
+/**
  * Register the webhook from environment config, if configured. No-op (with a
- * log) when the token or URL is missing — e.g. local dev without a tunnel.
- * Safe to call on every server startup.
+ * log) when the token is missing or no public HTTPS URL can be resolved — e.g.
+ * local dev without a tunnel. Safe to call on every server startup.
  */
 export async function registerWebhookFromEnv(): Promise<void> {
   if (!isTelegramConfigured()) return;
 
-  const url = process.env.TELEGRAM_WEBHOOK_URL;
+  const url = resolveWebhookUrl();
   if (!url) {
-    console.log("[telegram] TELEGRAM_WEBHOOK_URL not set — skipping webhook registration.");
+    console.log(
+      "[telegram] no public HTTPS webhook URL (set TELEGRAM_WEBHOOK_URL or an https FRONTEND_URL) — skipping webhook registration.",
+    );
     return;
   }
 
