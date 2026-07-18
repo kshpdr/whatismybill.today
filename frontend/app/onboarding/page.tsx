@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Zap, Droplets, Flame, Copy, Check, ArrowRight, Home, Users, ChevronLeft } from "lucide-react";
+import { Zap, Droplets, Flame, Copy, Check, ArrowRight, Home, Users, ChevronLeft, LogOut } from "lucide-react";
 import { apiFetch } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth-context";
 import type { Household } from "@/lib/types";
@@ -215,7 +215,7 @@ function UtilityIcons() {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, refreshHouseholds } = useAuth();
+  const { user, refreshHouseholds, signOut } = useAuth();
 
   const [step, setStep] = useState<Step>("choice");
   const [nickname, setNickname] = useState("");
@@ -578,6 +578,15 @@ export default function OnboardingPage() {
           </div>
         )}
       </div>
+
+      {/* Sign out — escape hatch so a wrong-account login isn't a dead end */}
+      <button
+        onClick={() => { signOut(); router.push("/login"); }}
+        className="mt-6 flex items-center gap-1.5 text-xs text-[var(--wm-t3)] hover:text-[var(--wm-t2)] transition-colors"
+      >
+        <LogOut size={13} />
+        Sign out{user?.name ? ` (${user.name})` : ""}
+      </button>
     </div>
   );
 }
