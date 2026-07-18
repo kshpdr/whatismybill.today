@@ -3,10 +3,8 @@ import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { bills, householdMembers } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
-import { parseBillPDF } from "../lib/parsers/index.js";
-import { mapBillToRows } from "../lib/map-to-bill.js";
-import { saveFile, getFile, deleteFile } from "../lib/storage.js";
-import { randomUUID } from "crypto";
+import { ingestBillFromBuffer } from "../lib/ingest-bill.js";
+import { getFile, deleteFile } from "../lib/storage.js";
 
 type Vars = { Variables: { userId: string } };
 const router = new Hono<Vars>();
@@ -98,37 +96,16 @@ router.post("/upload", async (c) => {
   const buffer      = Buffer.from(await file.arrayBuffer());
   const privacyMode = body["privacyMode"] === "true";
 
-  // Save PDF unless user opted out
-  let storageRef: string | null = null;
-  if (!privacyMode) {
-    const pdfId = randomUUID();
-    storageRef = await saveFile(householdId, pdfId, buffer);
-  }
+  const result = await ingestBillFromBuffer(buffer, { householdId, userId, privacyMode });
 
-  // Parse the PDF
-  const parseResult = await parseBillPDF(buffer);
-
-  if (!parseResult.success) {
-    if (parseResult.encodingError) {
-      return c.json({ error: "encoding_error", message: parseResult.error, storageRef }, 422);
+  if (!result.ok) {
+    if (result.error === "encoding_error") {
+      return c.json({ error: "encoding_error", message: result.message, storageRef: result.storageRef }, 422);
     }
-    return c.json({ error: "parse_failed", message: parseResult.error }, 422);
+    return c.json({ error: "parse_failed", message: result.message }, 422);
   }
 
-  const rows = mapBillToRows(
-    parseResult,
-    storageRef,
-    householdId,
-    userId,
-    privacyMode ? null : parseResult.rawText,
-  );
-
-  if (rows.length === 0) {
-    return c.json({ error: "parse_failed", message: "No bill data could be extracted" }, 422);
-  }
-
-  const inserted = await db.insert(bills).values(rows).returning();
-  return c.json({ bills: inserted.map(formatBill) }, 201);
+  return c.json({ bills: result.bills.map(formatBill) }, 201);
 });
 
 // ─── GET /bills/:id ───────────────────────────────────────────────────────────

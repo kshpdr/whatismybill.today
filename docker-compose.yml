@@ -31,7 +31,9 @@ services:
       UPLOAD_DIR:   /data/bills
       PORT:         3001
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_TOKEN:      ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_WEBHOOK_URL:    ${TELEGRAM_WEBHOOK_URL:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
     volumes:
       - bills_data:/data/bills
     ports:
