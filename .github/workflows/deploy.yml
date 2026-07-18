@@ -16,7 +16,7 @@ jobs:
 
       - name: Derive app version from commit date
         id: version
-        run: echo "value=v$(git show -s --format=%cs HEAD)" >> "$GITHUB_OUTPUT"
+        run: echo "value=v$(git show -s --format=%cs-%h HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
