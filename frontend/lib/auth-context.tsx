@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { apiFetch, setToken, clearToken } from "./api/client";
 import type { UserProfile, Household, TelegramAuthPayload } from "./types";
+import { isReadOnlyHousehold } from "./types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,9 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const hs = await apiFetch<Household[]>("/households");
       setHouseholds(hs);
+      const preferred = hs.find((h) => !isReadOnlyHousehold(h)) ?? hs[0] ?? null;
       setCurrentHousehold((prev) => {
-        if (prev) return hs.find((h) => h.id === prev.id) ?? hs[0] ?? null;
-        return hs[0] ?? null;
+        if (prev) return hs.find((h) => h.id === prev.id) ?? preferred;
+        return preferred;
       });
     } catch {
       setHouseholds([]);

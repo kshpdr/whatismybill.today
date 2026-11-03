@@ -2,10 +2,13 @@ import { Hono } from "hono";
 import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { db } from "../db/index.js";
-import { shareLinks, households, householdMembers, bills, SHARE_VISIBILITY_DEFAULTS } from "../db/schema.js";
+import { shareLinks, households, bills, SHARE_VISIBILITY_DEFAULTS } from "../db/schema.js";
 import type { ShareVisibilityConfig } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
 import { mergeVisibilityConfig, filterBillsByVisibility } from "../lib/share-filter.js";
+import { getHouseholdAccess } from "../lib/household-access.js";
+import { filterBillsByWindows, isBillInWindow, windowContains } from "../lib/access-window.js";
+import type { AccessWindow } from "../lib/access-window.js";
 
 type Vars = { Variables: { userId: string } };
 const router = new Hono<Vars>();
@@ -16,18 +19,8 @@ function generateToken(): string {
   return randomBytes(32).toString("hex");
 }
 
-async function isMember(householdId: string, userId: string): Promise<boolean> {
-  const row = await db
-    .select({ hid: householdMembers.householdId })
-    .from(householdMembers)
-    .where(
-      and(
-        eq(householdMembers.householdId, householdId),
-        eq(householdMembers.userId, userId),
-      )
-    )
-    .limit(1);
-  return row.length > 0;
+function linkWindow(link: { accessFrom: string | null; accessUntil: string | null }): AccessWindow {
+  return { from: link.accessFrom ?? null, until: link.accessUntil ?? null };
 }
 
 function formatBill(b: typeof bills.$inferSelect) {
@@ -54,8 +47,9 @@ router.post("/households/:id/share", requireAuth, async (c) => {
   const userId      = c.get("userId");
   const householdId = c.req.param("id") as string;
 
-  if (!(await isMember(householdId, userId))) {
-    return c.json({ error: "Not a member of this household" }, 403);
+  const access = await getHouseholdAccess(householdId, userId);
+  if (!access?.activeWindow) {
+    return c.json({ error: "Only current members can create share links" }, 403);
   }
 
   type Body = { label?: string; expiryDays?: number; visibilityConfig?: Partial<ShareVisibilityConfig> };
@@ -77,6 +71,8 @@ router.post("/households/:id/share", requireAuth, async (c) => {
     label,
     expiresAt,
     visibilityConfig,
+    accessFrom:  access.activeWindow.from,
+    accessUntil: access.activeWindow.until,
   }).returning();
 
   return c.json({
@@ -94,9 +90,11 @@ router.get("/households/:id/share", requireAuth, async (c) => {
   const userId      = c.get("userId");
   const householdId = c.req.param("id") as string;
 
-  if (!(await isMember(householdId, userId))) {
+  const access = await getHouseholdAccess(householdId, userId);
+  if (!access?.activeWindow) {
     return c.json({ error: "Not a member of this household" }, 403);
   }
+  const memberWindow = access.activeWindow;
 
   const rows = await db
     .select({
@@ -105,11 +103,17 @@ router.get("/households/:id/share", requireAuth, async (c) => {
       expiresAt:        shareLinks.expiresAt,
       createdAt:        shareLinks.createdAt,
       visibilityConfig: shareLinks.visibilityConfig,
+      accessFrom:       shareLinks.accessFrom,
+      accessUntil:      shareLinks.accessUntil,
     })
     .from(shareLinks)
     .where(eq(shareLinks.householdId, householdId));
 
-  return c.json(rows.map((l) => ({
+  // A link token grants its whole window, so only show links that expose
+  // nothing beyond what this member can already see.
+  const visible = rows.filter((l) => windowContains(memberWindow, linkWindow(l)));
+
+  return c.json(visible.map((l) => ({
     token:            l.token,
     label:            l.label ?? null,
     expiresAt:        l.expiresAt?.toISOString() ?? null,
@@ -125,16 +129,22 @@ router.delete("/households/:id/share/:token", requireAuth, async (c) => {
   const householdId = c.req.param("id")    as string;
   const token       = c.req.param("token") as string;
 
-  if (!(await isMember(householdId, userId))) {
+  const access = await getHouseholdAccess(householdId, userId);
+  if (!access?.activeWindow) {
     return c.json({ error: "Not a member of this household" }, 403);
   }
 
-  await db.delete(shareLinks).where(
+  const [link] = await db.select().from(shareLinks).where(
     and(
       eq(shareLinks.token, token),
       eq(shareLinks.householdId, householdId),
     )
-  );
+  ).limit(1);
+  if (!link || !windowContains(access.activeWindow, linkWindow(link))) {
+    return c.json({ error: "Share link not found" }, 404);
+  }
+
+  await db.delete(shareLinks).where(eq(shareLinks.token, token));
 
   return c.body(null, 204);
 });
@@ -160,7 +170,10 @@ router.get("/share/:token", async (c) => {
     .where(eq(bills.householdId, link.householdId));
 
   const visibilityConfig = mergeVisibilityConfig(link.visibilityConfig);
-  const billRows = filterBillsByVisibility(allBillRows, visibilityConfig);
+  const billRows = filterBillsByVisibility(
+    filterBillsByWindows(allBillRows, [linkWindow(link)]),
+    visibilityConfig,
+  );
 
   return c.json({
     household: { nickname: household.nickname, address: household.address ?? null },
@@ -190,7 +203,7 @@ router.get("/share/:token/bills/:billId/pdf", async (c) => {
   const [bill] = await db.select().from(bills).where(
     and(eq(bills.id, billId), eq(bills.householdId, link.householdId))
   ).limit(1);
-  if (!bill) return c.json({ error: "Bill not found" }, 404);
+  if (!bill || !isBillInWindow(bill, linkWindow(link))) return c.json({ error: "Bill not found" }, 404);
   if (!bill.storageRef) return c.json({ error: "PDF was not stored for this bill" }, 404);
 
   const { getFile } = await import("../lib/storage.js");

@@ -7,9 +7,9 @@ import {
   numeric,
   date,
   jsonb,
-  primaryKey,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +53,7 @@ export const householdsRelations = relations(households, ({ one, many }) => ({
 export const householdMembers = pgTable(
   "household_members",
   {
+    id: uuid("id").primaryKey().defaultRandom(),
     householdId: uuid("household_id")
       .references(() => households.id, { onDelete: "cascade" })
       .notNull(),
@@ -60,8 +61,17 @@ export const householdMembers = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     joinedAt: timestamp("joined_at").defaultNow().notNull(),
+    // Stay window (inclusive). accessFrom null = sees all history;
+    // accessUntil null = current member, set = former member (read-only).
+    accessFrom:  date("access_from"),
+    accessUntil: date("access_until"),
   },
-  (t) => [primaryKey({ columns: [t.householdId, t.userId] })]
+  // A person can have several past stays but only one current one.
+  (t) => [
+    uniqueIndex("household_members_active_unique")
+      .on(t.householdId, t.userId)
+      .where(sql`${t.accessUntil} IS NULL`),
+  ]
 );
 
 export const householdMembersRelations = relations(householdMembers, ({ one }) => ({
@@ -136,6 +146,10 @@ export const shareLinks = pgTable("share_links", {
     .notNull()
     .default(SHARE_VISIBILITY_DEFAULTS)
     .$type<ShareVisibilityConfig>(),
+  // Snapshot of the creator's stay window, so a link never exposes bills the
+  // creator couldn't see. Capped when the creator moves out.
+  accessFrom:       date("access_from"),
+  accessUntil:      date("access_until"),
 });
 
 export const shareLinksRelations = relations(shareLinks, ({ one }) => ({

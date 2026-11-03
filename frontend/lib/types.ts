@@ -24,22 +24,39 @@ export interface TelegramAuthPayload {
 
 // ─── Households ───────────────────────────────────────────────────────────────
 
+/**
+ * A stay in a household. Bills are visible when their billing period overlaps
+ * [accessFrom, accessUntil] (inclusive ISO dates; null = unbounded). Former
+ * members (accessUntil set) are read-only.
+ */
+export interface Membership {
+  active:      boolean;
+  accessFrom:  string | null;
+  accessUntil: string | null;
+}
+
 export interface Household {
   id:                   string;
   nickname:             string;
   address?:             string;
   ownerId:              string;
-  inviteCode:           string;
+  inviteCode:           string | null;   // null for former members
   inviteCodeRotatedAt?: string;
   createdAt:            string;
+  membership?:          Membership;
 }
 
-export interface HouseholdMember {
-  id:       string;
-  name:     string;
-  email:    string;
-  isOwner:  boolean;
-  joinedAt: string;
+export interface HouseholdMember extends Membership {
+  id:           string;          // user id
+  membershipId: string;
+  name:         string;
+  email:        string | null;
+  isOwner:      boolean;
+  joinedAt:     string;
+}
+
+export function isReadOnlyHousehold(h: Pick<Household, "membership"> | null | undefined): boolean {
+  return h?.membership?.active === false;
 }
 
 // ─── Bills ────────────────────────────────────────────────────────────────────
