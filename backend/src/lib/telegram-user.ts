@@ -7,7 +7,7 @@
  * linking happen on the website, with explicit user consent).
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { users, households, householdMembers } from "../db/schema.js";
 
@@ -25,7 +25,7 @@ export async function findTelegramUser(telegramId: string): Promise<User | null>
 }
 
 /**
- * Return the user's primary household — the first one they belong to,
+ * Return the user's primary household — the first one they currently live in,
  * ordered by join time so it's stable. Null when they have none.
  *
  * A user can belong to several households; the bot uses this single pick and
@@ -36,7 +36,7 @@ export async function getPrimaryHousehold(userId: string): Promise<Household | n
     .select({ household: households })
     .from(householdMembers)
     .innerJoin(households, eq(householdMembers.householdId, households.id))
-    .where(eq(householdMembers.userId, userId))
+    .where(and(eq(householdMembers.userId, userId), isNull(householdMembers.accessUntil)))
     .orderBy(householdMembers.joinedAt)
     .limit(1);
   return row?.household ?? null;

@@ -404,3 +404,75 @@ describe("GET /households/:id/share", () => {
     expect(body[0].visibilityConfig.visibleUtilityTypes).toEqual(["electricity", "gas", "water"]);
   });
 });
+
+// ─── Stay windows ─────────────────────────────────────────────────────────────
+
+describe("share links respect the creator's stay window", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const datedBill = (id: string, start: string, end: string) => ({
+    ...makeBillRow(id, "electricity", end),
+    billingPeriodStart: start,
+  });
+
+  it("public view hides bills outside the link's window", async () => {
+    const link = makeLink({ accessFrom: "2026-03-01", accessUntil: null });
+    mockSelect
+      .mockReturnValueOnce(makeChain([link]))
+      .mockReturnValueOnce(makeChain([MOCK_HOUSEHOLD]))
+      .mockReturnValueOnce(makeChain([
+        datedBill("before", "2026-01-01", "2026-01-31"),
+        datedBill("spans",  "2026-02-15", "2026-03-14"),
+        datedBill("after",  "2026-03-15", "2026-04-14"),
+      ]));
+
+    const res = await router.request(`/share/${TOKEN}`);
+    const body = await res.json() as any;
+    expect(body.bills.map((b: any) => b.id)).toEqual(["spans", "after"]);
+  });
+
+  it("PDF proxy returns 404 for a bill outside the link's window", async () => {
+    const link = makeLink({ accessFrom: null, accessUntil: "2026-01-31" });
+    mockSelect
+      .mockReturnValueOnce(makeChain([link]))
+      .mockReturnValueOnce(makeChain([{ ...datedBill("late", "2026-03-01", "2026-03-31"), storageRef: "x.pdf" }]));
+
+    const res = await router.request(`/share/${TOKEN}/bills/late/pdf`);
+    expect(res.status).toBe(404);
+  });
+
+  it("former members cannot create share links", async () => {
+    mockSelect.mockReturnValueOnce(makeChain([{ accessFrom: null, accessUntil: "2026-01-31" }]));
+    const res = await router.request(`/households/${HOUSEHOLD_ID}/share`, {
+      method:  "POST",
+      headers: { Authorization: "Bearer fake-token", "Content-Type": "application/json" },
+      body:    "{}",
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("list hides links that reach before the member moved in", async () => {
+    const linkRow = (token: string, accessFrom: string | null) => ({
+      token, label: null, expiresAt: null, createdAt: new Date("2026-01-01"),
+      visibilityConfig: makeLink().visibilityConfig, accessFrom, accessUntil: null,
+    });
+    mockSelect.mockReturnValueOnce(makeChain([{ accessFrom: "2026-03-01", accessUntil: null }]));
+    mockSelect.mockReturnValueOnce({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([
+          linkRow("owner-full-history", null),
+          linkRow("older-member",       "2026-01-01"),
+          linkRow("mine",               "2026-03-01"),
+        ]),
+      }),
+    });
+
+    const res = await router.request(`/households/${HOUSEHOLD_ID}/share`, {
+      headers: { Authorization: "Bearer fake-token" },
+    });
+    const body = await res.json() as any;
+    expect(body.map((l: any) => l.token)).toEqual(["mine"]);
+  });
+});

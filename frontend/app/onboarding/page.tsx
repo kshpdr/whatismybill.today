@@ -250,7 +250,7 @@ export default function OnboardingPage() {
         body:   JSON.stringify({ nickname: nickname.trim(), address: address.trim() || undefined }),
       });
       await refreshHouseholds();
-      setCreatedCode(household.inviteCode);
+      setCreatedCode(household.inviteCode ?? "");
       setStep("success-create");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

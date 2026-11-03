@@ -10,17 +10,18 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { apiFetch } from "@/lib/api/client";
 import { TelegramLoginButton, isTelegramConfigured } from "@/app/components/TelegramLoginButton";
-import type { HouseholdMember, TelegramAuthPayload } from "@/lib/types";
+import type { Household, HouseholdMember, TelegramAuthPayload } from "@/lib/types";
+import { isReadOnlyHousehold } from "@/lib/types";
 
 // ─── Mock data (used when Firebase not configured) ────────────────────────────
 
-const MOCK_MEMBERS = [
-  { id: "u1", name: "Jane Smith",  email: "jane@example.com",  isOwner: true,  joinedAt: new Date("2024-03-01").toISOString() },
-  { id: "u2", name: "Alex Kim",    email: "alex@example.com",  isOwner: false, joinedAt: new Date("2024-03-05").toISOString() },
-  { id: "u3", name: "Sam Rivera",  email: "sam@example.com",   isOwner: false, joinedAt: new Date("2024-04-10").toISOString() },
+const MOCK_MEMBERS: HouseholdMember[] = [
+  { id: "u1", membershipId: "m1", name: "Jane Smith", email: "jane@example.com", isOwner: true,  joinedAt: new Date("2024-03-01").toISOString(), active: true,  accessFrom: null,         accessUntil: null },
+  { id: "u2", membershipId: "m2", name: "Alex Kim",   email: "alex@example.com", isOwner: false, joinedAt: new Date("2024-03-05").toISOString(), active: true,  accessFrom: "2024-03-05", accessUntil: null },
+  { id: "u3", membershipId: "m3", name: "Sam Rivera", email: "sam@example.com",  isOwner: false, joinedAt: new Date("2024-04-10").toISOString(), active: false, accessFrom: "2024-04-10", accessUntil: "2025-08-31" },
 ];
 
-const MOCK_HOUSEHOLD = {
+const MOCK_HOUSEHOLD: Household = {
   id: "h1",
   nickname: "123 Maple St",
   address: "Oakland, CA 94601",
@@ -31,6 +32,22 @@ const MOCK_HOUSEHOLD = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Stay dates are calendar dates; format in UTC so they don't shift a day. */
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+function stayLabel(m: { accessFrom: string | null; accessUntil: string | null }) {
+  if (m.accessFrom && m.accessUntil) return `${fmtDate(m.accessFrom)} – ${fmtDate(m.accessUntil)}`;
+  if (m.accessUntil)                 return `Until ${fmtDate(m.accessUntil)}`;
+  if (m.accessFrom)                  return `Since ${fmtDate(m.accessFrom)}`;
+  return "Full history";
+}
 
 function initials(name: string) {
   return name.split(" ").map((p) => p[0]).join("").toUpperCase().slice(0, 2);
@@ -69,6 +86,110 @@ function InviteCodeRow({ code, onCopy }: { code: string; onCopy: () => void }) {
 }
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
+
+function MemberRow({
+  member, isYou, canEditStay, editing, stayFrom, stayUntil,
+  onStayFromChange, onStayUntilChange, onEdit, onCancelEdit, onSave, actions, footer,
+}: {
+  member:            HouseholdMember;
+  isYou:             boolean;
+  canEditStay:       boolean;
+  editing:           boolean;
+  stayFrom:          string;
+  stayUntil:         string;
+  onStayFromChange:  (v: string) => void;
+  onStayUntilChange: (v: string) => void;
+  onEdit:            () => void;
+  onCancelEdit:      () => void;
+  onSave:            () => void;
+  actions?:          React.ReactNode;
+  footer?:           React.ReactNode;
+}) {
+  const dateInput =
+    "bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md px-2 py-1 text-xs font-mono text-[var(--wm-t1)] focus:border-[#e8a838] focus:outline-none";
+  return (
+    <div className="px-4 py-3 border-b border-[var(--wm-border-sub)] last:border-b-0">
+      <div className="flex items-center gap-3">
+        <div className={`w-9 h-9 rounded-md flex items-center justify-center text-sm font-mono shrink-0 ${avatarColor(member.id)}`}>
+          {initials(member.name)}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-[var(--wm-t1)] truncate">
+              {member.name}
+              {isYou && <span className="text-[var(--wm-t3)] ml-1 text-xs">· you</span>}
+            </p>
+            {member.isOwner && (
+              <span className="shrink-0 inline-flex items-center gap-0.5 bg-[var(--wm-amber-dim)] border border-[var(--wm-amber-dim)] text-[#e8a838] text-[10px] font-mono px-1.5 py-0.5 rounded">
+                <Crown size={8} />
+                Owner
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[var(--wm-t3)] truncate">
+            {member.email && <>{member.email} · </>}
+            <span className="font-mono">{stayLabel(member)}</span>
+            {canEditStay && !editing && (
+              <button
+                onClick={onEdit}
+                className="ml-1.5 inline-flex align-middle text-[var(--wm-t3)] hover:text-[#e8a838] transition-colors"
+                title="Edit move-in / move-out dates"
+              >
+                <Pencil size={10} />
+              </button>
+            )}
+          </p>
+        </div>
+
+        {actions}
+      </div>
+
+      {editing && (
+        <div className="mt-2 pl-12 flex flex-wrap items-center gap-2">
+          <label className="text-xs text-[var(--wm-t3)]">Moved in</label>
+          <input
+            type="date"
+            value={stayFrom}
+            max={stayUntil || undefined}
+            onChange={(e) => onStayFromChange(e.target.value)}
+            className={dateInput}
+          />
+          {!member.active && (
+            <>
+              <label className="text-xs text-[var(--wm-t3)]">Moved out</label>
+              <input
+                type="date"
+                value={stayUntil}
+                min={stayFrom || undefined}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => onStayUntilChange(e.target.value)}
+                className={dateInput}
+              />
+            </>
+          )}
+          <button
+            onClick={onSave}
+            className="px-2.5 py-1 rounded-md bg-[#e8a838] hover:bg-[#d4993a] text-black text-xs font-semibold transition-colors"
+          >
+            Save
+          </button>
+          <button
+            onClick={onCancelEdit}
+            className="px-2 py-1 rounded-md text-xs text-[var(--wm-t3)] hover:text-[var(--wm-t1)] transition-colors"
+          >
+            Cancel
+          </button>
+          <p className="w-full text-[10px] text-[var(--wm-t3)]">
+            Clear the move-in date to show the full history.
+          </p>
+        </div>
+      )}
+
+      {footer && <div className="mt-2 pl-12">{footer}</div>}
+    </div>
+  );
+}
 
 function Section({
   title,
@@ -123,6 +244,7 @@ export default function SettingsPage() {
 
   const household = currentHousehold ?? MOCK_HOUSEHOLD;
   const isOwner = user ? user.id === household.ownerId : true;
+  const isFormer = isReadOnlyHousehold(household);
 
   // ─── Home info edit state ────────────────────────────────────────────────
   const [editing, setEditing] = useState(false);
@@ -198,10 +320,23 @@ export default function SettingsPage() {
   // ─── Members state ────────────────────────────────────────────────────────
   const [members, setMembers] = useState<HouseholdMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
+  const [endingStayOf, setEndingStayOf] = useState<string | null>(null);
+  const [moveOutDate, setMoveOutDate] = useState(todayIso());
+  const [editingStay, setEditingStay] = useState<string | null>(null);
+  const [stayFrom, setStayFrom] = useState("");
+  const [stayUntil, setStayUntil] = useState("");
 
-  useEffect(() => {
+  const currentMembers = members.filter((m) => m.active);
+  const pastMembers    = members.filter((m) => !m.active);
+
+  function reloadMembers() {
     if (!household.id || household.id === "h1") {
-      setMembers(MOCK_MEMBERS.map(m => ({ ...m, joinedAt: new Date().toISOString() })));
+      setMembers(MOCK_MEMBERS);
+      setMembersLoading(false);
+      return;
+    }
+    if (isFormer) {
+      setMembers([]);
       setMembersLoading(false);
       return;
     }
@@ -209,17 +344,60 @@ export default function SettingsPage() {
       .then(setMembers)
       .catch(() => setMembers([]))
       .finally(() => setMembersLoading(false));
-  }, [household.id]);
+  }
 
-  async function handleRemove(memberId: string) {
-    const m = members.find((m) => m.id === memberId);
-    if (!m) return;
-    if (!confirm(`Remove ${m.name} from this home?`)) return;
+  useEffect(reloadMembers, [household.id, isFormer]);
+
+  function startEndStay(memberId: string) {
+    setEditingStay(null);
+    setMoveOutDate(todayIso());
+    setEndingStayOf(memberId);
+  }
+
+  async function confirmEndStay(memberId: string) {
     try {
-      await apiFetch(`/households/${household.id}/members/${memberId}`, { method: "DELETE" });
-      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      await apiFetch(
+        `/households/${household.id}/members/${memberId}?until=${encodeURIComponent(moveOutDate)}`,
+        { method: "DELETE" },
+      );
+      setEndingStayOf(null);
+      reloadMembers();
+      await refreshHouseholds(); // the invite code was rotated
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to remove member");
+    }
+  }
+
+  async function handlePurge(member: HouseholdMember) {
+    if (!confirm(`Remove all of ${member.name}'s access? They will no longer see any bills from their stay.`)) return;
+    try {
+      await apiFetch(`/households/${household.id}/members/${member.id}?purge=true`, { method: "DELETE" });
+      reloadMembers();
+      await refreshHouseholds();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to remove access");
+    }
+  }
+
+  function startEditStay(m: HouseholdMember) {
+    setEndingStayOf(null);
+    setStayFrom(m.accessFrom ?? "");
+    setStayUntil(m.accessUntil ?? "");
+    setEditingStay(m.membershipId);
+  }
+
+  async function saveStay(m: HouseholdMember) {
+    const payload: { accessFrom: string | null; accessUntil?: string } = { accessFrom: stayFrom || null };
+    if (!m.active && stayUntil) payload.accessUntil = stayUntil;
+    try {
+      await apiFetch(`/households/${household.id}/memberships/${m.membershipId}`, {
+        method: "PATCH",
+        body:   JSON.stringify(payload),
+      });
+      setEditingStay(null);
+      reloadMembers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update dates");
     }
   }
 
@@ -277,11 +455,16 @@ export default function SettingsPage() {
   const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
   useEffect(() => {
+    if (isFormer) {
+      setShareLinks([]);
+      setShareLoading(false);
+      return;
+    }
     apiFetch<ShareLinkRow[]>(`/households/${household.id}/share`)
       .then(setShareLinks)
       .catch(() => {})
       .finally(() => setShareLoading(false));
-  }, [household.id]);
+  }, [household.id, isFormer]);
 
   async function handleCreateShare() {
     setShareCreating(true);
@@ -329,11 +512,11 @@ export default function SettingsPage() {
   }
 
   async function handleLeave() {
-    if (!confirm(`Leave "${household.nickname}"? You'll lose access to all bills.`)) return;
+    if (!confirm(`Leave "${household.nickname}"? You'll keep read-only access to bills from your stay.`)) return;
     try {
       await apiFetch(`/households/${household.id}/leave`, { method: "POST" });
       await refreshHouseholds();
-      router.push("/onboarding");
+      router.push("/dashboard");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to leave home");
     }
@@ -458,63 +641,133 @@ export default function SettingsPage() {
           </div>
         </Section>
 
-        {/* ── MEMBERS ── */}
-        <Section title={`Members (${members.length})`}>
-          {members.map((member, i) => (
-            <div
-              key={member.id}
-              className={`flex items-center gap-3 px-4 py-3 ${
-                i < members.length - 1 ? "border-b border-[var(--wm-border-sub)]" : ""
-              }`}
-            >
-              {/* Avatar */}
-              <div
-                className={`w-9 h-9 rounded-md flex items-center justify-center text-sm font-mono shrink-0 ${avatarColor(member.id)}`}
-              >
-                {initials(member.name)}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-[var(--wm-t1)] truncate">
-                    {member.name}
-                    {member.id === user?.id && (
-                      <span className="text-[var(--wm-t3)] ml-1 text-xs">· you</span>
-                    )}
-                  </p>
-                  {member.isOwner && (
-                    <span className="shrink-0 inline-flex items-center gap-0.5 bg-[var(--wm-amber-dim)] border border-[var(--wm-amber-dim)] text-[#e8a838] text-[10px] font-mono px-1.5 py-0.5 rounded">
-                      <Crown size={8} />
-                      Owner
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-[var(--wm-t3)] truncate">{member.email}</p>
-              </div>
-
-              {/* Remove (owner only, not for self or other owner) */}
-              {isOwner && !member.isOwner && (
-                <button
-                  onClick={() => handleRemove(member.id)}
-                  className="shrink-0 p-2 rounded-md text-[var(--wm-t3)] hover:text-[var(--wm-red-text)] hover:bg-[var(--wm-red-dim)] transition-colors"
-                  title={`Remove ${member.name}`}
-                >
-                  <UserMinus size={14} />
-                </button>
-              )}
+        {/* ── FORMER MEMBER NOTICE ── */}
+        {isFormer && (
+          <Section title="Your stay">
+            <div className="px-4 py-4 space-y-1.5">
+              <p className="text-sm text-[var(--wm-t1)]">
+                {stayLabel({
+                  accessFrom:  household.membership?.accessFrom ?? null,
+                  accessUntil: household.membership?.accessUntil ?? null,
+                })}
+              </p>
+              <p className="text-xs text-[var(--wm-t3)]">
+                You&apos;ve moved out of this home. You can still view bills from your stay, read-only.
+                Ask the owner for a new invite code if you move back.
+              </p>
             </div>
-          ))}
+          </Section>
+        )}
+
+        {/* ── MEMBERS ── */}
+        {!isFormer && (
+        <Section title={`Members (${currentMembers.length})`}>
+          {currentMembers.map((member) => {
+            const canManage = isOwner && !member.isOwner;
+            const ending = endingStayOf === member.id;
+            return (
+              <MemberRow
+                key={member.membershipId}
+                member={member}
+                isYou={member.id === user?.id}
+                canEditStay={canManage}
+                editing={editingStay === member.membershipId}
+                stayFrom={stayFrom}
+                stayUntil={stayUntil}
+                onStayFromChange={setStayFrom}
+                onStayUntilChange={setStayUntil}
+                onEdit={() => startEditStay(member)}
+                onCancelEdit={() => setEditingStay(null)}
+                onSave={() => saveStay(member)}
+                actions={canManage && !ending && (
+                  <button
+                    onClick={() => startEndStay(member.id)}
+                    className="shrink-0 p-2 rounded-md text-[var(--wm-t3)] hover:text-[var(--wm-red-text)] hover:bg-[var(--wm-red-dim)] transition-colors"
+                    title={`${member.name} moved out`}
+                  >
+                    <UserMinus size={14} />
+                  </button>
+                )}
+                footer={canManage && ending && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="text-xs text-[var(--wm-t3)]">Moved out on</label>
+                    <input
+                      type="date"
+                      value={moveOutDate}
+                      max={todayIso()}
+                      min={member.accessFrom ?? undefined}
+                      onChange={(e) => setMoveOutDate(e.target.value)}
+                      className="bg-[var(--wm-surface)] border border-[var(--wm-border)] rounded-md px-2 py-1 text-xs font-mono text-[var(--wm-t1)] focus:border-[#e8a838] focus:outline-none"
+                    />
+                    <button
+                      onClick={() => confirmEndStay(member.id)}
+                      disabled={!moveOutDate}
+                      className="px-2.5 py-1 rounded-md bg-[#e8a838] hover:bg-[#d4993a] text-black text-xs font-semibold disabled:opacity-50 transition-colors"
+                    >
+                      End stay
+                    </button>
+                    <button
+                      onClick={() => setEndingStayOf(null)}
+                      className="px-2 py-1 rounded-md text-xs text-[var(--wm-t3)] hover:text-[var(--wm-t1)] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <p className="w-full text-[10px] text-[var(--wm-t3)]">
+                      They keep read-only access to bills from their stay. The invite code will be rotated.
+                    </p>
+                  </div>
+                )}
+              />
+            );
+          })}
 
           {/* Invite hint */}
           <div className="px-4 py-3 bg-[var(--wm-surface)] border-t border-[var(--wm-border-sub)] flex items-center gap-2">
             <Users size={13} className="text-[var(--wm-t3)] shrink-0" />
             <p className="text-xs text-[var(--wm-t3)]">
-              Share the invite code below to add more members.
+              New roommates only see bills from their move-in date onward.
             </p>
           </div>
         </Section>
+        )}
 
+        {/* ── PAST MEMBERS ── */}
+        {!isFormer && pastMembers.length > 0 && (
+          <Section title={`Past members (${pastMembers.length})`}>
+            {pastMembers.map((member) => (
+              <MemberRow
+                key={member.membershipId}
+                member={member}
+                isYou={member.id === user?.id}
+                canEditStay={isOwner}
+                editing={editingStay === member.membershipId}
+                stayFrom={stayFrom}
+                stayUntil={stayUntil}
+                onStayFromChange={setStayFrom}
+                onStayUntilChange={setStayUntil}
+                onEdit={() => startEditStay(member)}
+                onCancelEdit={() => setEditingStay(null)}
+                onSave={() => saveStay(member)}
+                actions={isOwner && (
+                  <button
+                    onClick={() => handlePurge(member)}
+                    className="shrink-0 p-2 rounded-md text-[var(--wm-t3)] hover:text-[var(--wm-red-text)] hover:bg-[var(--wm-red-dim)] transition-colors"
+                    title={`Remove all of ${member.name}'s access`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              />
+            ))}
+            <div className="px-4 py-3 bg-[var(--wm-surface)] border-t border-[var(--wm-border-sub)]">
+              <p className="text-xs text-[var(--wm-t3)]">
+                Past members can view bills from their stay, read-only.
+              </p>
+            </div>
+          </Section>
+        )}
+
+        {!isFormer && (<>
         {/* ── INVITE CODE ── */}
         <Section title="Invite code">
           <div className="px-4 py-5 space-y-4">
@@ -733,6 +986,8 @@ export default function SettingsPage() {
           </div>
         </Section>
 
+        </>)}
+
         {/* ── ACCOUNT / TELEGRAM ── */}
         {isTelegramConfigured() && (
           <Section title="Account">
@@ -771,6 +1026,7 @@ export default function SettingsPage() {
         )}
 
         {/* ── DANGER ZONE ── */}
+        {!isFormer && (
         <section>
           <button
             onClick={() => setShowDanger(!showDanger)}
@@ -813,7 +1069,7 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-sm text-[var(--wm-red-text)]">Leave this home</p>
                     <p className="text-xs text-[var(--wm-t3)] mt-0.5">
-                      You&apos;ll lose access to all bills in this home.
+                      You&apos;ll keep read-only access to bills from your stay.
                     </p>
                   </div>
                 </button>
@@ -821,6 +1077,7 @@ export default function SettingsPage() {
             </div>
           )}
         </section>
+        )}
 
         {/* Bottom padding for mobile nav */}
         <div className="h-6" />

@@ -57,6 +57,8 @@ docker compose pull && docker compose up -d --no-deps backend frontend  # deploy
 
 **Households:** Users belong to households; bills are scoped to a household, not a user. Members join via invite codes (`backend/src/lib/invite-code.ts`), managed through `backend/src/routes/households.ts`.
 
+**Stay windows (roommate turnover):** A `householdMembers` row is a *stay* with `accessFrom`/`accessUntil` dates (inclusive; null = unbounded). A member sees a bill only if its billing period overlaps one of their stays — so a new roommate doesn't see bills from before they moved in, and the bill spanning a move-over date is visible to both people. `accessUntil` set = former member: read-only (no upload/delete/share/members/invite code). Removing or leaving ends the stay instead of deleting the row (`?purge=true` deletes it); owner removal also rotates the invite code. Share links snapshot their creator's window (`shareLinks.accessFrom/accessUntil`) and are capped when the creator moves out; members only see links that don't reach beyond their own window. All access checks go through `backend/src/lib/household-access.ts`, with the pure rules in `backend/src/lib/access-window.ts` — don't query `householdMembers` for authorization directly.
+
 **Share-link visibility:** Share links support granular controls (which utility types, charge line items, and how much history are exposed). The server applies these filters in `backend/src/lib/share-filter.ts` before returning data to the public `/share/[token]` view — never trust the client to hide fields.
 
 **Key data flow:** `useBills()` hook (`frontend/lib/use-bills.ts`) → `frontend/lib/bill-utils.ts` → `frontend/app/dashboard/page.tsx`.

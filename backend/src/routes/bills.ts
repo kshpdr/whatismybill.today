@@ -1,10 +1,12 @@
 import { Hono } from "hono";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db } from "../db/index.js";
-import { bills, householdMembers } from "../db/schema.js";
+import { bills } from "../db/schema.js";
 import { requireAuth } from "../middleware/auth.js";
 import { ingestBillFromBuffer } from "../lib/ingest-bill.js";
 import { getFile, deleteFile } from "../lib/storage.js";
+import { getHouseholdAccess } from "../lib/household-access.js";
+import { filterBillsByWindows, isBillInAnyWindow } from "../lib/access-window.js";
 
 type Vars = { Variables: { userId: string } };
 const router = new Hono<Vars>();
@@ -13,21 +15,21 @@ router.use("*", requireAuth);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function isMember(householdId: string, userId: string): Promise<boolean> {
-  const row = await db
-    .select()
-    .from(householdMembers)
-    .where(
-      and(
-        eq(householdMembers.householdId, householdId),
-        eq(householdMembers.userId, userId)
-      )
-    )
-    .limit(1);
-  return row.length > 0;
+type BillRow = typeof bills.$inferSelect;
+
+/**
+ * Load a bill only if the user may see it. Bills outside the user's stay
+ * windows are reported as not found so their existence isn't revealed.
+ */
+async function loadVisibleBill(id: string, userId: string) {
+  const [bill] = await db.select().from(bills).where(eq(bills.id, id)).limit(1);
+  if (!bill) return null;
+  const access = await getHouseholdAccess(bill.householdId, userId);
+  if (!access || !isBillInAnyWindow(bill, access.windows)) return null;
+  return { bill, access };
 }
 
-function formatBill(b: typeof bills.$inferSelect) {
+function formatBill(b: BillRow) {
   return {
     id:                 b.id,
     householdId:        b.householdId,
@@ -57,7 +59,8 @@ router.get("/", async (c) => {
   if (!householdId) {
     return c.json({ error: "householdId query param is required" }, 400);
   }
-  if (!(await isMember(householdId, userId))) {
+  const access = await getHouseholdAccess(householdId, userId);
+  if (!access) {
     return c.json({ error: "Not a member of this household" }, 403);
   }
 
@@ -67,7 +70,7 @@ router.get("/", async (c) => {
     .where(eq(bills.householdId, householdId))
     .orderBy(desc(bills.billingPeriodStart));
 
-  return c.json(rows.map(formatBill));
+  return c.json(filterBillsByWindows(rows, access.windows).map(formatBill));
 });
 
 // ─── POST /bills/upload ───────────────────────────────────────────────────────
@@ -89,8 +92,9 @@ router.post("/upload", async (c) => {
   if (file.type !== "application/pdf" && !file.name.endsWith(".pdf")) {
     return c.json({ error: "Only PDF files are accepted" }, 400);
   }
-  if (!(await isMember(householdId, userId))) {
-    return c.json({ error: "Not a member of this household" }, 403);
+  const access = await getHouseholdAccess(householdId, userId);
+  if (!access?.active) {
+    return c.json({ error: "Only current members can upload bills" }, 403);
   }
 
   const buffer      = Buffer.from(await file.arrayBuffer());
@@ -114,12 +118,9 @@ router.get("/:id", async (c) => {
   const userId = c.get("userId");
   const { id } = c.req.param();
 
-  const [bill] = await db.select().from(bills).where(eq(bills.id, id)).limit(1);
-  if (!bill) return c.json({ error: "Bill not found" }, 404);
-
-  if (!(await isMember(bill.householdId, userId))) {
-    return c.json({ error: "Not a member of this household" }, 403);
-  }
+  const visible = await loadVisibleBill(id, userId);
+  if (!visible) return c.json({ error: "Bill not found" }, 404);
+  const { bill } = visible;
 
   return c.json(formatBill(bill));
 });
@@ -130,12 +131,9 @@ router.get("/:id/pdf", async (c) => {
   const userId = c.get("userId");
   const { id } = c.req.param();
 
-  const [bill] = await db.select().from(bills).where(eq(bills.id, id)).limit(1);
-  if (!bill) return c.json({ error: "Bill not found" }, 404);
-
-  if (!(await isMember(bill.householdId, userId))) {
-    return c.json({ error: "Not a member of this household" }, 403);
-  }
+  const visible = await loadVisibleBill(id, userId);
+  if (!visible) return c.json({ error: "Bill not found" }, 404);
+  const { bill } = visible;
 
   if (!bill.storageRef) {
     return c.json({ error: "PDF was not stored for this bill" }, 404);
@@ -163,11 +161,11 @@ router.delete("/:id", async (c) => {
   const userId = c.get("userId");
   const { id } = c.req.param();
 
-  const [bill] = await db.select().from(bills).where(eq(bills.id, id)).limit(1);
-  if (!bill) return c.json({ error: "Bill not found" }, 404);
-
-  if (!(await isMember(bill.householdId, userId))) {
-    return c.json({ error: "Not a member of this household" }, 403);
+  const visible = await loadVisibleBill(id, userId);
+  if (!visible) return c.json({ error: "Bill not found" }, 404);
+  const { bill, access } = visible;
+  if (!access.active) {
+    return c.json({ error: "Only current members can delete bills" }, 403);
   }
 
   await db.delete(bills).where(eq(bills.id, id));
