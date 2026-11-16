@@ -44,7 +44,9 @@ const PARSER_REGISTRY: ParserPlugin[] = [
 async function extractText(buffer: Buffer): Promise<string> {
   const parser = new PDFParse({ data: buffer, verbosity: 0 });
   const result = await parser.getText({});
-  return result.text ?? "";
+  // Some PDFs use NUL characters as word separators. Postgres rejects them in
+  // text/jsonb columns, so normalize them to spaces before parsing or storing.
+  return (result.text ?? "").replace(/\u0000/g, " ");
 }
 
 function isGarbledEncoding(text: string): boolean {

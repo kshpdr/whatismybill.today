@@ -48,7 +48,9 @@ async function extractText(buffer: Buffer): Promise<string> {
   // Dynamic import keeps pdf-parse out of the static bundle (Turbopack compat).
   const pdfParse = (await import("pdf-parse")).default;
   const result   = await pdfParse(buffer);
-  return result.text ?? "";
+  // Some PDFs use NUL characters as word separators; normalize them to spaces
+  // (kept in sync with the backend, where Postgres rejects NULs outright).
+  return (result.text ?? "").replace(/\u0000/g, " ");
 }
 
 function isGarbledEncoding(text: string): boolean {

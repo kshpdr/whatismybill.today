@@ -108,13 +108,14 @@ function computeMonthlyAllocations(
 /**
  * Parse tier quantity charge lines.
  * Format in PDF: `{qty}X ${rate4decimal}{amount}` — rate always has 4 decimal
- * places, which lets us split the merged token precisely.
+ * places, which lets us split the merged token precisely. Some PDFs put a
+ * space between rate and amount, so that is tolerated too.
  * e.g. "3.80000X $4.656217.69"  →  qty=3.8, rate=4.6562, amount=17.69
  */
 function parseTiers(block: string): SJWTier[] {
   const tiers: SJWTier[] = [];
   // rate always has exactly 4 decimal digits → use that to split token
-  const re = /([\d.]+)\s*[Xx]\s*\$([\d]+\.[\d]{4})([\d,]+\.[\d]{2})/g;
+  const re = /([\d.]+)\s*[Xx]\s*\$([\d]+\.[\d]{4})\s*([\d,]+\.[\d]{2})/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(block)) !== null) {
     tiers.push({
@@ -134,7 +135,7 @@ function parseTiers(block: string): SJWTier[] {
  */
 function parseChargeLineItems(block: string): LineItem[] {
   // Remove tier lines so they don't interfere
-  const noTiers = block.replace(/([\d.]+)\s*[Xx]\s*\$[\d]+\.[\d]{4}[\d,]+\.[\d]{2}/g, "");
+  const noTiers = block.replace(/([\d.]+)\s*[Xx]\s*\$[\d]+\.[\d]{4}\s*[\d,]+\.[\d]{2}/g, "");
 
   const lines = noTiers
     .split("\n")
